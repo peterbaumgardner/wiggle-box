@@ -16,7 +16,7 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 7_000 },
   fullyParallel: true,
-  workers: process.env.CI ? 2 : 4,
+  workers: Number(process.env.WB_WORKERS || 2),
   retries: 0,
   reporter: [['list'], ['json', { outputFile: 'test-results/results.json' }], ['html', { open: 'never', outputFolder: 'test-results/html' }]],
   outputDir: 'test-results/artifacts',

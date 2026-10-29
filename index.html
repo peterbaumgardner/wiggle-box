@@ -422,7 +422,9 @@ img,canvas{-webkit-user-drag:none}
 .itab.on{background:#FFFCF2;border-bottom-color:#FFFCF2;z-index:1}
 .itab.hot::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#FF8A2B;margin-right:7px;vertical-align:1px}
 .idock.closed .itabs{border-bottom:0;padding-bottom:8px}.idock.closed .itab{bottom:0;border-radius:14px}
-.idock.closed .lab-panel,.idock.closed .fxo-b{display:none}
+/* a folded info bar hides the info cards, but never the game's own controls (.keep: Robo's code, the seesaw blocks) */
+.idock.closed .fxo-b,.idock.closed .lab-panel:not(:has(>.keep:not([hidden]))){display:none}
+.idock.closed .lab-panel>:not(.keep){display:none!important}
 .lab-panel{display:flex;gap:16px;align-items:flex-start;padding:10px 16px 12px;min-width:0;overflow:hidden}
 .lab-panel .fx,.fxo-b .fx{display:none}
 .lab-panel>:not(.fx):not(.keep):not(:has(.fx)){display:none}
@@ -1086,8 +1088,9 @@ init(stage,g){
   function drawMol(){const W=dims.w,H=dims.h;ctx.fillStyle='#F4F7FF';ctx.fillRect(0,0,W,H);const A=mol.atoms;
     // springy layout: bonds pull, everything pushes
     const dragOf=a=>[...drags].find(d=>d.a===a&&d.moved);
-    for(const a of A){const dd=dragOf(a);if(dd&&!mol.atoms.some(t=>t!==a&&Math.hypot(t.x-dd.x,t.y-dd.y)<34)){a.x=dd.x;a.y=dd.y;continue}for(const b of A){if(a===b)continue;const dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||1;if(d<160){a.vx+=dx/d*(160-d)*.004;a.vy+=dy/d*(160-d)*.004}}}
-    for(const b of mol.bonds){const dx=b.b.x-b.a.x,dy=b.b.y-b.a.y,d=Math.hypot(dx,dy)||1,f=(d-90)*.03;b.a.vx+=dx/d*f;b.a.vy+=dy/d*f;b.b.vx-=dx/d*f;b.b.vy-=dy/d*f}
+    const held=new Set([...drags].filter(d=>d.moved).map(d=>d.a));
+    for(const a of A){const dd=dragOf(a);if(dd&&!mol.atoms.some(t=>t!==a&&Math.hypot(t.x-dd.x,t.y-dd.y)<34)){a.x=dd.x;a.y=dd.y;continue}for(const b of A){if(a===b||held.has(b))continue;const dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy)||1;if(d<160){a.vx+=dx/d*(160-d)*.004;a.vy+=dy/d*(160-d)*.004}}}
+    for(const b of mol.bonds){if(held.has(b.a)||held.has(b.b))continue;const dx=b.b.x-b.a.x,dy=b.b.y-b.a.y,d=Math.hypot(dx,dy)||1,f=(d-90)*.03;b.a.vx+=dx/d*f;b.a.vy+=dy/d*f;b.b.vx-=dx/d*f;b.b.vy-=dy/d*f}
     for(const a of A){const dd=dragOf(a);if(dd&&!mol.atoms.some(t=>t!==a&&Math.hypot(t.x-dd.x,t.y-dd.y)<34))continue;a.vx*=.85;a.vy*=.85;a.x=clamp(a.x+a.vx,30,W-30);a.y=clamp(a.y+a.vy,30,H-30)}
     for(const b of mol.bonds){const dx=b.b.x-b.a.x,dy=b.b.y-b.a.y,d=Math.hypot(dx,dy)||1,nx=-dy/d*6,ny=dx/d*6;for(let k=0;k<b.o;k++){const o=(k-(b.o-1)/2);ctx.strokeStyle='#1D1842';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(b.a.x+nx*o,b.a.y+ny*o);ctx.lineTo(b.b.x+nx*o,b.b.y+ny*o);ctx.stroke()}}
     for(const drag of drags){ctx.strokeStyle='rgba(154,91,255,.7)';ctx.setLineDash([6,6]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(drag.a.x,drag.a.y);ctx.lineTo(drag.x,drag.y);ctx.stroke();ctx.setLineDash([])}
@@ -1116,10 +1119,9 @@ init(stage,g){
   let tq={left:[],right:[],pick:1,bank:[],ang:0,av:0,solved:false};
   const ui=labShell(stage,{label:'Scale',top:`${chips('mode',[['alg','📦 Mystery box'],['torque','🛝 Seesaw']],'alg')}<span class="sep"></span><span class="lvl" id="lv"></span>
     <button class="pbtn small" id="undo">↩ Undo</button><button class="pbtn small" id="split" hidden>÷ Split into groups</button><button class="pbtn small" id="next">➜ Next</button>`,
-    panel:`<div class="fx big hot" id="eqc"><span class="tag">The scale says</span><div class="row" id="eq"></div></div>
+    panel:`<div id="tqbank" class="keep" hidden></div><div class="fx big hot" id="eqc"><span class="tag">The scale says</span><div class="row" id="eq"></div><div class="row note" id="how"></div></div>
       <div class="fx"><span class="tag">Your steps</span><div id="steps"></div></div>
-      <div class="fx" id="rule"><span class="tag">The secret</span><div class="row">Whatever you do to one side, do to the other side too.</div></div>
-      <div id="tqbank" hidden></div><p class="note" id="how"></p>`});
+      <div class="fx" id="rule"><span class="tag">The secret</span><div class="row">Whatever you do to one side, do to the other side too.</div></div>`});
   const {cv,panel}=ui,ctx=cv.getContext('2d');let dims=fitCanvas(cv);
   const xC='#9A5BFF',uC='#FFC83D';
   const sideStr=s=>{const p=[];if(s.b)p.push(s.b===1?V('x',xC):`<span class="num">${s.b}</span>${V('x',xC)}`);if(s.u||!s.b)p.push(`<span class="num">${s.u}</span>`);return p.join(' + ')};
@@ -1220,7 +1222,7 @@ init(stage,g){
     if(mode==='torque'&&/^[1-5]$/.test(k)){if(tq.solved)return true;tq.right.push({m:tq.pick,d:+k});tone(300+k*80,.1,'triangle');syncTq();return true}
     if(k==='1'||k==='2'){if(mode==='alg'&&/^[12]$/.test(k)){ui.top.querySelectorAll('[data-mode]')[+k-1].click();return true}}return false});
   g.loop(()=>{frame++;draw()});
-  GAMES.balance._debug={get L(){return L},get R(){return R},get x(){return x},take,split,get solved(){return solved},setMode,get tq(){return tq}};
+  GAMES.balance._debug={get L(){return L},get R(){return R},get x(){return x},take,split,get solved(){return solved},setMode,get tq(){return tq},get items(){return items},geomTq,get li(){return li}};
 }}});
 
 /* ============================================================
@@ -1228,8 +1230,11 @@ init(stage,g){
    ============================================================ */
 Object.assign(GAMES,{bridge:{title:'Bridge Builder',icon:'🌉',c:'var(--tang)',age:'7+',section:'lab',order:9,blurb:'Build with triangles. Watch the stress, then send the truck.',
 init(stage,g){
-  const LEVELS=[{gap:.32,load:1,budget:900},{gap:.42,load:1,budget:1200},{gap:.5,load:1.6,budget:1500},{gap:.56,load:2.2,budget:1700},{gap:.62,load:3,budget:2000}];
-  const MATS={wood:{n:'Wood',c:'#C98B4F',cost:1,str:1,k:.9},steel:{n:'Steel',c:'#8A9BC2',cost:2.2,str:2.4,k:1},road:{n:'Road',c:'#3B3770',cost:1.5,str:1.3,k:.95}};
+  /* gap in grid squares, truck mass in tonnes */
+  const LEVELS=[{cells:5,load:1,budget:900},{cells:7,load:1,budget:1200},{cells:8,load:1.6,budget:1500},{cells:9,load:2.2,budget:1700},{cells:10,load:3,budget:2000}];
+  /* EA: how hard a beam resists stretching or squashing (in truck-tonnes per unit of strain); lim: the strain where it
+     snaps; rho: its own weight per grid square. Steel is twice as stiff and much stronger than wood, and costs more. */
+  const MATS={wood:{n:'Wood',c:'#C98B4F',cost:1,EA:500,lim:.0042,rho:.004},steel:{n:'Steel',c:'#8A9BC2',cost:2.2,EA:1000,lim:.01,rho:.01},road:{n:'Road',c:'#3B3770',cost:1.5,EA:500,lim:.0055,rho:.008}};
   let peak=0,li=0,mat='road',nodes=[],beams=[],running=false,truck=null,frame=0,result=null,maxStress=0,spent=0,grid=40,ground=0,L;const drags=new Set();let pend=null;
   const ui=labShell(stage,{label:'Bridge site',top:`${chips('bm',Object.entries(MATS).map(([k,m])=>[k,`${k==='road'?'🛣️':k==='wood'?'🪵':'🔩'} ${m.n}`]),'road')}<button class="opt" data-bm="erase">🧽 Erase</button><span class="sep"></span><span class="lvl" id="lv"></span>
     <button class="pbtn go small" id="go">🚚 Test it!</button><button class="pbtn small" id="stop">✋ Stop</button><button class="pbtn small" id="undo">↩ Undo</button><button class="pbtn small" id="clr">🧹 Clear</button><button class="pbtn small" id="nx">➜ Next</button>`,panel:'<div id="pn"></div>'});
@@ -1238,7 +1243,7 @@ init(stage,g){
      the picture: the bridge the child built keeps its shape (it used to be wiped). */
   let cells=0;
   function geo(keep){const W=dims.w,H=dims.h,lv=LEVELS[li%LEVELS.length];const g0=Math.max(26,Math.round(Math.min(W,H)/13));
-    if(!keep||!cells)cells=Math.max(3,Math.round(W*lv.gap/g0));
+    if(!keep||!cells)cells=lv.cells;
     grid=Math.max(12,Math.min(g0,Math.floor(W/(cells+4)),Math.floor(H*.62/7)));ground=Math.round(H*.62/grid)*grid;
     const gw=cells*grid;L={x0:Math.round((W/2-gw/2)/grid)*grid,x1:0,W,H,lv};L.x1=L.x0+gw}
   /* forces, speeds and limits are in grid squares, so the same bridge behaves the same on every screen size */
@@ -1246,12 +1251,12 @@ init(stage,g){
   function load(i){li=i;pend=null;cells=0;geo();running=false;truck=null;result=null;
     nodes=[{x:L.x0,y:ground,fixed:true},{x:L.x1,y:ground,fixed:true},{x:L.x0,y:ground+grid*2,fixed:true},{x:L.x1,y:ground+grid*2,fixed:true}];beams=[];reset();
     stage.querySelector('#lv').textContent=`Level ${li%LEVELS.length+1}`;info()}
-  function reset(){for(const n of nodes){n.ox??=n.x;n.oy??=n.y;n.x=n.ox;n.y=n.oy;n.px=n.x;n.py=n.y}for(const b of beams){b.broken=false;b.s=0}truck=null;running=false;result=null;maxStress=0}
+  function reset(){for(const n of nodes){n.ox??=n.x;n.oy??=n.y;n.x=n.ox;n.y=n.oy;n.px=n.x;n.py=n.y;n.ux=n.uy=n.vx=n.vy=0}for(const b of beams){b.broken=false;b.s=0}truck=null;running=false;result=null;maxStress=0;falling=false}
   const cost=b=>Math.hypot(b.a.ox-b.b.ox,b.a.oy-b.b.oy)/grid*10*MATS[b.m].cost;
   function info(){spent=beams.reduce((s,b)=>s+cost(b),0);const lv=L.lv,tri=countTris();const sel=beams.find(b=>b.sel);
     patchPanel(panel.querySelector('#pn'),`<div class="fx big ${spent>lv.budget?'':'hot'}"><span class="tag">Budget</span><div class="row"><span class="num" style="color:${spent>lv.budget?'#E8384F':'#1FA463'}">$${Math.round(spent)}</span> of $${lv.budget}</div></div>
       <div class="fx"><span class="tag">Stress in a beam</span><div class="row">${V('σ','#E8384F')} = ${frac(V('F','#FF8A2B'),V('A','#2F6FE0'))}</div><div class="row note">force spread over the beam. Too much and it snaps!</div>
-        <div class="row"><span class="num" style="color:#E8384F">${running?Math.round(maxStress*100):0}%</span> worst beam right now</div></div>
+        <div class="row"><span class="num" style="color:#E8384F">${running?Math.round(maxStress*100):0}%</span> of its breaking point, worst beam right now</div><div class="row note">Bends are drawn ${AMP}× bigger so you can see them.</div></div>
       <div class="fx"><span class="tag">Triangles</span><div class="row"><span class="num">${tri}</span> triangles in your bridge</div><div class="row note">A triangle cannot change shape without a side changing length. A square can squish flat!</div></div>
       <div class="fx"><span class="tag">Weight of the truck</span><div class="row">${V('W','#9A5BFF')} = ${V('m','#9A5BFF')} × ${V('g','#9A5BFF')} = ${fmt(lv.load*1000,0)} × 9.8 = <span class="num">${fmt(lv.load*9800,0)}</span> N</div></div>
       <div class="fx"><span class="tag">Colors</span><div class="row"><span style="color:#2F6FE0">■ blue = squeezed</span> &nbsp; <span style="color:#E8384F">■ red = stretched</span></div></div>
@@ -1259,7 +1264,7 @@ init(stage,g){
   function countTris(){let c=0;const adj=new Map();for(const b of beams){(adj.get(b.a)||adj.set(b.a,new Set()).get(b.a)).add(b.b);(adj.get(b.b)||adj.set(b.b,new Set()).get(b.b)).add(b.a)}
     for(const b of beams){const A=adj.get(b.a),B=adj.get(b.b);for(const n of A)if(B.has(n))c++}return c/3}
   bindChips(ui.top,'bm',k=>{mat=k});
-  stage.querySelector('#go').addEventListener('click',()=>{if(running)return;if(spent>L.lv.budget){buzz();ui.hint('Over budget! Remove some beams.');return}reset();running=true;truck={x:-grid*1.5,v:0,on:false};noise(.8,150,.6,.15,0,300)});
+  stage.querySelector('#go').addEventListener('click',()=>{if(running)return;if(spent>L.lv.budget){buzz();ui.hint('Over budget! Remove some beams.');return}reset();running=true;truck={x:Math.max(-grid*1.5,L.x0-grid*5),v:0,on:false};noise(.8,150,.6,.15,0,300)});
   stage.querySelector('#stop').addEventListener('click',()=>{reset();info()});
   stage.querySelector('#clr').addEventListener('click',()=>load(li));
   function undo(){if(running){reset()}const b=beams.pop();if(!b){buzz();return}nodes=nodes.filter(n=>n.fixed||beams.some(q=>q.a===n||q.b===n));tone(380,.08,'triangle');info()}
@@ -1277,28 +1282,54 @@ init(stage,g){
       if(len>4.3){buzz();ui.hint('That beam is too long. Beams can be at most 4 squares.');return}if(y>ground+grid*2.1&&!(nodeAt(x,y)?.fixed)){ui.hint('That is underground!');return}
       const b2=nodeAt(x,y)||mk(x,y);if(beams.some(b=>(b.a===a&&b.b===b2)||(b.a===b2&&b.b===a)))return;beams.push({a,b:b2,m:mat,rest:Math.hypot(b2.ox-a.ox,b2.oy-a.oy),s:0});
       tone(mat==='steel'?700:mat==='road'?400:520,.06,'triangle');noise(.05,mat==='steel'?3000:900,2,.08);info()}
-  function mk(x,y){const n={x,y,ox:x,oy:y,px:x,py:y};nodes.push(n);return n}
+  function mk(x,y){const n={x,y,ox:x,oy:y,px:x,py:y,ux:0,uy:0,vx:0,vy:0};nodes.push(n);return n}
   const nearBuilt=(x,y)=>!!nodeAt(x,y);
   function erase(x,y){const before=beams.length;beams=beams.filter(b=>{const ax=b.a.ox,ay=b.a.oy,bx=b.b.ox,by=b.b.oy,l2=(bx-ax)**2+(by-ay)**2,t=clamp(((x-ax)*(bx-ax)+(y-ay)*(by-ay))/l2,0,1);return Math.hypot(x-(ax+(bx-ax)*t),y-(ay+(by-ay)*t))>10});
     nodes=nodes.filter(n=>n.fixed||beams.some(b=>b.a===n||b.b===n));if(beams.length<before){noise(.1,1500,1,.08);info()}}
-  /* ---------- physics: verlet nodes + stiff beams ---------- */
-  function sim(){const G=.25*PS(),sub=10;const tw=L.lv.load*1.4*PS();
+  /* ---------- physics: a pin-jointed truss ----------
+     Every beam is a spring along its length with real stiffness (EA). Each frame the truss settles under the truck's
+     weight and its own weight (dynamic relaxation, warm-started from the last frame), using exact beam lengths, so a
+     road with nothing holding its joints up has to sag and stretch like a rope, while triangles carry the load with
+     tiny stretches. A beam snaps when its strain passes its material's limit. Distances are in grid squares and
+     forces in truck-tonnes, so the result is the same on every screen. Bends are tiny, so they are drawn bigger. */
+  let falling=false;const AMP=20;
+  const restOf=n=>[(n.ox-L.x0)/grid,(n.oy-ground)/grid];
+  function wheelLoads(){const out=[];if(!truck)return out;for(const wx of [truck.x-grid*.9,truck.x+grid*.9]){const rb=roadUnder(wx);if(rb)out.push([rb.b,rb.t,L.lv.load/2])}return out}
+  function settle(iter){const live=beams.filter(b=>!b.broken);
+    for(const n of nodes){n.kk=0;n.lx=0;n.ly=0;[n.rx,n.ry]=restOf(n);n.ux??=0;n.uy??=0;n.vx??=0;n.vy??=0}
+    for(const b of live){const M=MATS[b.m];b.r=b.rest/grid;const k=M.EA/b.r;b.a.kk+=k;b.b.kk+=k;const w=M.rho*b.r/2;b.a.ly+=w;b.b.ly+=w}
+    for(const [b,t,w] of wheelLoads()){b.a.ly+=w*(1-t);b.b.ly+=w*t}
+    for(let it=0;it<iter;it++){
+      for(const n of nodes){n.fx=n.lx;n.fy=n.ly}
+      for(const b of live){const A=b.a,B=b.b,dx=B.rx+B.ux-A.rx-A.ux,dy=B.ry+B.uy-A.ry-A.uy,d=Math.hypot(dx,dy)||1e-9,e=(d-b.r)/b.r,T=MATS[b.m].EA*e;
+        A.fx+=T*dx/d;A.fy+=T*dy/d;B.fx-=T*dx/d;B.fy-=T*dy/d}
+      for(const n of nodes){if(n.fixed||!n.kk)continue;n.vx=n.vx*.9+n.fx/n.kk;n.vy=n.vy*.9+n.fy/n.kk;
+        /* a joint with nothing holding it up can only fall so far per step, so a broken bridge comes down, it does not explode */
+        const sp=Math.hypot(n.vx,n.vy);if(sp>.05){n.vx*=.05/sp;n.vy*=.05/sp}n.ux+=n.vx;n.uy+=n.vy}}
+    maxStress=0;let worst=null,wr=1;
+    for(const b of live){const A=b.a,B=b.b,d=Math.hypot(B.rx+B.ux-A.rx-A.ux,B.ry+B.uy-A.ry-A.uy),e=(d-b.r)/b.r,r=Math.abs(e)/MATS[b.m].lim;b.s=e;peak=Math.max(peak,Math.abs(e));maxStress=Math.max(maxStress,r);if(r>wr){wr=r;worst=b}}
+    if(worst&&!window.__nobreak){worst.broken=true;noise(.3,worst.m==='steel'?2500:700,1.2,.35);tone(worst.m==='steel'?300:120,.25,'square',.06);shakeEl(cv)}
+    /* where to draw each joint: small bends magnified so you can see them, big movements shown as they are */
+    for(const n of nodes){const u=Math.hypot(n.ux,n.uy),k=u>1e-9?Math.min(AMP*u,Math.max(.5,u))/u:0;n.x=L.x0+(n.rx+n.ux*k)*grid;n.y=ground+(n.ry+n.uy*k)*grid}}
+  /* how far the road really sank under a wheel (grid squares) */
+  function sinkAt(x){const rb=roadUnder(x);if(!rb)return null;const{b,t}=rb;return b.a.uy*(1-t)+b.b.uy*t}
+  /* after a failure the pieces fall for real (gravity and rigid beams), from where the analysis left them */
+  function fall(){const G=.25*PS(),sub=10;
     for(let s=0;s<sub;s++){
       for(const n of nodes){if(n.fixed)continue;const vx=(n.x-n.px)*.995,vy=(n.y-n.py)*.995;n.px=n.x;n.py=n.y;n.x+=vx;n.y+=vy+G/sub*.6}
-      // truck weight: press down on the road beam under each wheel
-      if(truck)for(const wx of [truck.x-grid*.9,truck.x+grid*.9]){const rb=roadUnder(wx);if(rb){const{b,t}=rb;if(!b.a.fixed)b.a.y+=tw*(1-t)/sub*.6;if(!b.b.fixed)b.b.y+=tw*t/sub*.6}}
-      for(let it=0;it<3;it++)for(const b of beams){if(b.broken)continue;const dx=b.b.x-b.a.x,dy=b.b.y-b.a.y,d=Math.hypot(dx,dy)||1,diff=(d-b.rest)/d,k=MATS[b.m].k*.5;
+      for(let it=0;it<3;it++)for(const b of beams){if(b.broken)continue;const dx=b.b.x-b.a.x,dy=b.b.y-b.a.y,d=Math.hypot(dx,dy)||1,diff=(d-b.rest)/d,k=.45;
         const ia=b.a.fixed?0:1,ib=b.b.fixed?0:1,sw=ia+ib;if(!sw)continue;b.a.x+=dx*diff*k*ia/sw*2;b.a.y+=dy*diff*k*ia/sw*2;b.b.x-=dx*diff*k*ib/sw*2;b.b.y-=dy*diff*k*ib/sw*2}}
-    maxStress=0;for(const b of beams){if(b.broken)continue;const d=Math.hypot(b.b.x-b.a.x,b.b.y-b.a.y),strain=(d-b.rest)/b.rest;b.s=lerp(b.s,strain,.3);const lim=.0042*MATS[b.m].str,r=Math.abs(b.s)/lim;peak=Math.max(peak,Math.abs(b.s));maxStress=Math.max(maxStress,r);
-      if(r>1&&!window.__nobreak){b.broken=true;noise(.3,b.m==='steel'?2500:700,1.2,.35);tone(b.m==='steel'?300:120,.25,'square',.06);shakeEl(cv)}}
     for(const n of nodes)if(!n.fixed&&n.y>ground+grid*8){n.y=ground+grid*8;n.py=n.y}}
+  function sim(){if(falling){fall();return}settle(160)}
   function roadUnder(x){let best=null;for(const b of beams){if(b.broken||b.m!=='road')continue;const x0=Math.min(b.a.x,b.b.x),x1=Math.max(b.a.x,b.b.x);if(x>=x0&&x<=x1&&x1>x0){const t=(x-b.a.x)/(b.b.x-b.a.x);const y=b.a.y+(b.b.y-b.a.y)*t;if(!best||y<best.y)best={b,t,y}}}return best}
   function roadY(x){if(x<=L.x0||x>=L.x1)return ground;const r=roadUnder(x);return r?r.y:null}
   function driveTruck(){if(!truck||result)return;truck.v=Math.min(truck.v+.05*PS(),2.2*PS());truck.x+=truck.v;const fy=roadY(truck.x+grid*.9),ry=roadY(truck.x-grid*.9);
     if(fy===null&&ry===null&&truck.x>L.x0&&truck.x<L.x1){truck.fall=(truck.fall||0)+1}
     truck.y=(fy??L.H+50)*.5+(ry??L.H+50)*.5;truck.a=Math.atan2((fy??truck.y)-(ry??truck.y),grid*1.8);
-    if(truck.fall>4||truck.y>ground+grid*3){result='fail';ui.hint('Splash! The bridge was not strong enough. Add triangles or steel!',4500);buzz();g.later(()=>{if(result==='fail'){reset();info()}},2500)}
-    if(truck.x>L.W+grid*1.5){result='win';const lv=L.lv,stars=spent<lv.budget*.7?'Cheap and strong!':'It held!',was=li;win(stage,null,null,stars);g.later(()=>{if(li===was&&result==='win')load(li+1)},2600)}
+    const sunk=Math.max(sinkAt(truck.x-grid*.9)??0,sinkAt(truck.x+grid*.9)??0);
+    if(truck.fall>4||sunk>.8||truck.y>ground+grid*3){result='fail';falling=true;for(const n of nodes){n.px=n.x;n.py=n.y}
+      ui.hint('Splash! The bridge was not strong enough. Add triangles or steel!',4500);buzz();g.later(()=>{if(result==='fail'){reset();info()}},2500)}
+    if(truck.x>Math.min(L.W+grid*1.5,L.x1+grid*5)){result='win';const lv=L.lv,stars=spent<lv.budget*.7?'Cheap and strong!':'It held!',was=li;win(stage,null,null,stars);g.later(()=>{if(li===was&&result==='win')load(li+1)},2600)}
     if(frame%8===0)noise(.1,120+truck.v/PS()*30,.6,.05)}
   /* ---------- draw ---------- */
   function draw(){const W=L.W,H=L.H;ctx.setTransform(dims.d,0,0,dims.d,0,0);const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#8FD3FF');sky.addColorStop(1,'#E8F7FF');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
@@ -1307,7 +1338,7 @@ init(stage,g){
     // build grid
     if(!running){ctx.fillStyle='rgba(29,24,66,.18)';for(let x=L.x0-grid*2;x<=L.x1+grid*2;x+=grid)for(let y=ground-grid*6;y<=ground+grid*2;y+=grid){ctx.beginPath();ctx.arc(x,y,2.5,0,7);ctx.fill()}}
     for(const b of beams){if(b.broken)continue;const M=MATS[b.m],w=b.m==='road'?grid*.28:grid*.18;let col=M.c;
-      if(running){const r=clamp(b.s/(.0042*M.str),-1,1);col=r>0?`rgb(${200+55*r},${120-100*r},${100-80*r})`:`rgb(${120+90*r},${150+30*r},${230})`}
+      if(running){const r=clamp(b.s/M.lim,-1,1);col=r>0?`rgb(${200+55*r},${120-100*r},${100-80*r})`:`rgb(${120+90*r},${150+30*r},${230})`}
       ctx.strokeStyle='#1D1842';ctx.lineCap='round';ctx.lineWidth=w+4;ctx.beginPath();ctx.moveTo(b.a.x,b.a.y);ctx.lineTo(b.b.x,b.b.y);ctx.stroke();ctx.strokeStyle=col;ctx.lineWidth=w;ctx.stroke();
       if(b.m==='road'&&!running){ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;ctx.setLineDash([8,8]);ctx.stroke();ctx.setLineDash([])}}
     for(const n of nodes){ctx.fillStyle=n.fixed?'#E8384F':'#fff';ctx.strokeStyle='#1D1842';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(n.x,n.y,n.fixed?8:6,0,7);ctx.fill();ctx.stroke()}
@@ -2060,11 +2091,10 @@ init(stage,g){
   const mixed=n=>{if(n<=U)return fr(n);const w=Math.floor(n/U),r=n%U;return r?`<span class="num">${w}</span>${fr(r)}`:`<span class="num">${w}</span>`};
   let lvl=0,target=0,pours=[],cap=U,bottles=[],level=0,show=0,done=false,frame=0,anim=[],rid=0;
   const ui=labShell(stage,{label:'Potion beaker',top:`<span class="lvl" id="lv">Level 1</span><button class="pbtn small" id="undo">↩ Undo</button><button class="pbtn small" id="empty">🫗 Empty</button><button class="pbtn small" id="next">➜ Next</button>`,
-    panel:`<div class="fx big hot"><span class="tag">Fill to the line</span><div class="row" id="tg"></div></div>
+    panel:`<div class="fx big hot"><span class="tag">Fill to the line</span><div class="row" id="tg"></div><div class="row note">Tap a bottle to pour it in. Hit the line exactly!</div></div>
       <div class="fx"><span class="tag">In the beaker</span><div class="row" id="sum"></div></div>
       <div class="fx"><span class="tag">Same amount, other ways</span><div class="row" id="alt"></div></div>
-      <div class="fx"><span class="tag">Twins (equivalent)</span><div class="row" id="eqv"></div></div>
-      <p class="note">Tap a bottle to pour it in. Hit the line exactly!</p>`});
+      <div class="fx"><span class="tag">Twins (equivalent)</span><div class="row" id="eqv"></div></div>`});
   const {cv,panel}=ui,ctx=cv.getContext('2d');let dims=fitCanvas(cv),hits=[];
   function gen(){const pools=[[12,6],[12,6,3],[8,4,12],[6,4,3,12],[8,6,4,3,2],[12,8,6,4,3,2,16,18,9]],pool=pools[Math.min(lvl>>1,pools.length-1)];
     let need,tries=0;do{const k=lvl<2?2:lvl<6?pick([2,3]):pick([2,3,4]);need=[...Array(k)].map(()=>pick(pool));target=need.reduce((a,b)=>a+b,0)}while((target>(lvl>=6?2*U:U)||target===0)&&++tries<200);
@@ -2510,10 +2540,10 @@ init(stage,g){
   let mode='puz',li=0,pieces=[],inv={},pick_='mirror',rays=[],lit=new Set(),frame=0,sel=null,events=[],white=true,done=false;
   const ui=labShell(stage,{label:'Optics bench',top:`${chips('lm',[['puz','🧩 Puzzles'],['free','✨ Free play']],'puz')}<span class="sep"></span><span id="inv" class="pbar"></span><span class="lvl" id="lv"></span><button class="pbtn small" id="lnext">➜ Next</button>`,
     panel:`<div id="ev"></div>
-      <div class="fx"><span class="tag">Mirrors</span><div class="row">angle in = angle out</div><div class="row">${V('θ','#E8384F')}<sub>in</sub> = ${V('θ','#2F6FE0')}<sub>out</sub></div></div>
+      <div class="fx"><span class="tag">Mirrors</span><div class="row">angle in = angle out</div><div class="row">${V('θ','#E8384F')}<sub>in</sub> = ${V('θ','#2F6FE0')}<sub>out</sub></div><div class="row note">Tap an empty square to place a piece. Tap a piece to turn it. Drag it off the board to take it back.</div></div>
       <div class="fx"><span class="tag">Glass bends light (Snell)</span><div class="row">${V('n','#9A5BFF')}<sub>1</sub> sin ${V('θ','#E8384F')}<sub>1</sub> = ${V('n','#9A5BFF')}<sub>2</sub> sin ${V('θ','#2F6FE0')}<sub>2</sub></div><div class="row note">air: n = 1.00 &nbsp; glass: n = 1.50</div></div>
       <div class="fx"><span class="tag">Rainbows</span><div class="row">Violet bends the most, red the least.</div><div class="row note">Each color has its own n, so a prism fans them out.</div></div>
-      <p class="note">Tap an empty square to place a piece. Tap a piece to turn it.</p>`});
+`});
   const {cv,panel}=ui,ctx=cv.getContext('2d');let dims=fitCanvas(cv),cs=60,ox=0,oy=0;
   function layout(){cs=Math.min(dims.w/(COLS+.4),dims.h/(ROWS+.4));ox=(dims.w-COLS*cs)/2;oy=(dims.h-ROWS*cs)/2}
   function load(i){li=i;const L=LEVELS[i%LEVELS.length];pieces=L.p.map(p=>({...p,fixed:p.fixed??true}));inv={...L.inv};done=false;sel=null;
