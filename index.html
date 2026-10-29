@@ -2058,8 +2058,8 @@ init(stage,g){
     const best=cards.find(c=>c.v===target&&!c.leaf)||(cards.length===1&&!cards[0].leaf?cards[0]:null);
     panel.querySelector('#one').innerHTML=best?`<span class="num">${exprOf(best)} = ${best.v}</span>`:'<span class="note">…</span>'}
   function combine(i,j){const a=cards[i],b=cards[j],v=OPS[op](a.v,b.v);
-    if(v===null){buzz();ui.hint(op==='÷'?'That does not split evenly. Try another pair!':'That number gets too big!');shakeEl(cardsEl.children[j]);return}
-    if(v<0){buzz();ui.hint('No negative numbers here. Try the other order!');return}
+    if(v===null){buzz();ui.hint(op==='÷'?'That does not split evenly. Try another pair!':'That number gets too big!',3200,true);shakeEl(cardsEl.children[j]);sel=null;op=null;render();return}
+    if(v<0){buzz();ui.hint('No negative numbers here. Try the other order!',3200,true);sel=null;op=null;render();return}
     hist.push(JSON.stringify(cards));const nc={v,op,a,b};cards=cards.filter((_,k)=>k!==i&&k!==j);cards.push(nc);steps.push(`<span class="num">${a.v} ${op==='^'?'^':op} ${b.v} = ${v}</span>`);
     sel=null;op=null;tone(300+Math.min(v,60)*12,.14,'triangle',.18);noise(.15,1800,1,.1);
     if(v===target&&!done){done=true;const all=cards.length===1,my=rid;g.later(()=>{if(my!==rid||!done)return;win(stage,null,null,all?'Used every number!':String(target));if(all&&mode!=='24')addStar();lvl++;g.later(()=>{if(my===rid)gen()},2400)},350)}
@@ -2152,7 +2152,7 @@ init(stage,g){
   g.key(e=>{const k=e.key.toLowerCase();if(/^[1-9]$/.test(k)&&bottles[+k-1]!=null){pourB(bottles[+k-1],+k-1);return true}
     if(k==='z'||k==='backspace'){stage.querySelector('#undo').click();return true}if(k==='e'||k==='0'){stage.querySelector('#empty').click();return true}if(k==='n'){stage.querySelector('#next').click();return true}return false});
   g.loop(()=>{frame++;draw()});
-  GAMES.potion._debug={get target(){return target},get bottles(){return bottles},pourB,get lvl(){return lvl},gen,setLvl(v){lvl=v;gen()}};
+  GAMES.potion._debug={get target(){return target},get bottles(){return bottles},pourB,get lvl(){return lvl},gen,setLvl(v){lvl=v;gen()},get hits(){return hits},get pours(){return pours},U,get cap(){return cap}};
 }}});
 
 /* ============================================================
@@ -2163,7 +2163,7 @@ init(stage,g){
   const ui=labShell(stage,{label:'Geometry board',top:`${chips('m',[['poly','⬟ Polygon'],['pyth','📐 Pythagoras'],['circ','⭕ Circle'],['unit','🌀 Unit circle']],'poly')}<span class="sep"></span><span id="extra" class="pbar"></span>`,panel:'<div id="pn"></div>'});
   const {cv,panel}=ui,ctx=cv.getContext('2d');let dims=fitCanvas(cv),P,mode='poly',frame=0;
   const RED='#E8384F',BLUE='#2F6FE0',GRN='#1FA463',PUR='#9A5BFF',ORG='#FF8A2B';
-  let poly=[[-3,-2],[3,-2],[2,3],[-2,3]],tri={a:3,b:4},circ={r:3,unroll:0,roll:false},unit={t:Math.PI/4,hist:[]},found=new Set(),unrolled=new Set();
+  let poly=[[-3,-2],[3,-2],[2,3],[-2,3]],tri={a:3,b:4},circ={r:3,unroll:0,roll:false},unit={t:Math.PI/4,hist:[]},found=new Set(),unrolled=new Set(),view={pyth:null,circ:null};
   const area=pts=>{let s=0;for(let i=0;i<pts.length;i++){const[a,b]=pts[i],[c,d]=pts[(i+1)%pts.length];s+=a*d-b*c}return s/2};
   const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
   function angles(pts){const n=pts.length,sg=Math.sign(area(pts))||1;return pts.map((p,i)=>{const a=pts[(i+n-1)%n],b=pts[(i+1)%n];
@@ -2220,7 +2220,7 @@ init(stage,g){
   /* ---------- dragging ---------- */
   const fm=fingers(cv,{down(f){let dragI=null;const wx=P.IX(f.x),wy=P.IY(f.y),near=(px,py,r=.7)=>Math.hypot(wx-px,wy-py)<r;
       if(mode==='poly'){dragI=poly.findIndex(p=>near(p[0],p[1]));if(dragI<0)dragI=null}
-      if(mode==='pyth'){const o=[-tri.a/2,-tri.b/2];dragI=near(o[0]+tri.a,o[1])?'a':near(o[0],o[1]+tri.b)?'b':null}
+      if(mode==='pyth'){const o=tri.o||[-tri.a/2,-tri.b/2];dragI=near(o[0]+tri.a,o[1])?'a':near(o[0],o[1]+tri.b)?'b':null;if(dragI)tri.o=o}
       if(mode==='circ')dragI='r';if(mode==='unit')dragI='t';f.data.i=dragI;if(dragI!==null){tone(500,.05,'triangle');this.move(f)}},
     move(f){const dragI=f.data.i;
       if(dragI==null&&mode==='poly'){const tf=twoFinger(fm);if(tf&&!tf.start&&[...fm.values()].every(o=>o.data.i==null)){/* twist the whole shape around its middle */
@@ -2228,11 +2228,11 @@ init(stage,g){
         poly=poly.map(([x,y])=>[cx+(x-cx)*c-(y-cy)*sn,cy+(x-cx)*sn+(y-cy)*c]);if(frame%3===0)panelHTML();return}}
       if(dragI==null)return;const wx=P.IX(f.x),wy=P.IY(f.y);
       if(mode==='poly'){const nx=Math.round(wx*2)/2,ny=Math.round(wy*2)/2;const p=poly[dragI];if(p[0]!==nx||p[1]!==ny){p[0]=nx;p[1]=ny;tone(400+ny*20,.03,'sine',.04);panelHTML()}}
-      if(mode==='pyth'){const o=[-tri.a/2,-tri.b/2];if(dragI==='a'){const v=clamp(Math.round(wx-o[0]),1,10);if(v!==tri.a){tri.a=v;checkTrip()}}else{const v=clamp(Math.round(wy-o[1]),1,8);if(v!==tri.b){tri.b=v;checkTrip()}}}
+      if(mode==='pyth'){const o=tri.o||[-tri.a/2,-tri.b/2];if(dragI==='a'){const v=clamp(Math.round(wx-o[0]),1,10);if(v!==tri.a){tri.a=v;checkTrip()}}else{const v=clamp(Math.round(wy-o[1]),1,8);if(v!==tri.b){tri.b=v;checkTrip()}}}
       if(mode==='circ'){const r=clamp(Math.round(Math.hypot(wx-2*Math.PI*circ.r*circ.unroll,wy)*2)/2,.5,5);if(r!==circ.r){circ.r=r;circ.roll=false;circ.unroll=0;panelHTML();tone(300+r*60,.04,'sine',.05)}}
       if(mode==='unit'){let t=Math.atan2(wy,wx);const prev=unit.t%(2*Math.PI);let d=t-prev;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;unit.t+=d;
         const deg=((unit.t*180/Math.PI)%360+360)%360;for(const sp of [0,30,45,60,90,120,135,150,180,210,225,240,270,300,315,330,360])if(Math.abs(deg-sp)<2.2){unit.t+=(sp-deg)*Math.PI/180;break}panelHTML()}},
-    up(){if(mode==='poly')panelHTML()},
+    up(){if(mode==='poly')panelHTML();if(!fm.size)tri.o=null},
     wheel(w){if(mode==='unit'){unit.t-=w.dy*Math.PI/36;panelHTML()}if(mode==='circ'){circ.r=clamp(circ.r-w.dy*.5,.5,5);circ.roll=false;circ.unroll=0;panelHTML()}}});
   function checkTrip(){panelHTML();const{a,b}=tri,c=Math.sqrt(a*a+b*b);tone(300+(a+b)*30,.05,'sine',.05);
     if(Math.abs(c-Math.round(c))<1e-9){const k=[a,b].sort((x,y)=>x-y).join('-');if(!found.has(k)){found.add(k);const r=cv.getBoundingClientRect();win(stage,r.left+P.X(0),r.top+P.Y(0),`${a}² + ${b}² = ${Math.round(c)}²`);
@@ -2254,7 +2254,7 @@ init(stage,g){
         const inside=an[i]<180?1:-1;
         if(Math.abs(an[i]-90)<.5){ctx.strokeStyle=PUR;ctx.lineWidth=2.5;const s=14;ctx.beginPath();ctx.moveTo(x+ua[0]/la*s,y-ua[1]/la*s);ctx.lineTo(x+ua[0]/la*s+ub[0]/lb*s,y-ua[1]/la*s-ub[1]/lb*s);ctx.lineTo(x+ub[0]/lb*s,y-ub[1]/lb*s);ctx.stroke()}
         label(Math.round(an[i])+'°',x+bis[0]/bl*34*inside,y-bis[1]/bl*34*inside,PUR,14);handle(x,y,'#FFC83D')})}
-    if(mode==='pyth'){const{a,b}=tri,R=Math.max(a+b,8);P=plane(ctx,W,H,[-R*.95,R*.95],[-R*.75,R*.75],{pad:8});const o=[-a/2,-b/2],A=[o[0]+a,o[1]],Bp=[o[0],o[1]+b];
+    if(mode==='pyth'){const{a,b}=tri;if(!fm.size||view.pyth==null)view.pyth=Math.max(a+b,8);const R=view.pyth;P=plane(ctx,W,H,[-R*.95,R*.95],[-R*.75,R*.75],{pad:8});const o=tri.o||[-a/2,-b/2],A=[o[0]+a,o[1]],Bp=[o[0],o[1]+b];
       const sq=(p,q,col,lab)=>{const dx=q[0]-p[0],dy=q[1]-p[1];const pts=[p,q,[q[0]+dy,q[1]-dx],[p[0]+dy,p[1]-dx]];poly2(pts,col+'33',col,3);
         const L=Math.round(Math.hypot(dx,dy)*1000)/1000;ctx.save();poly2(pts,null,null);ctx.clip();ctx.strokeStyle=col+'55';ctx.lineWidth=1;
         for(let k=1;k<Math.ceil(L);k++){const t=k/L;ctx.beginPath();ctx.moveTo(P.X(p[0]+dx*t),P.Y(p[1]+dy*t));ctx.lineTo(P.X(p[0]+dx*t+dy),P.Y(p[1]+dy*t-dx));ctx.stroke();ctx.beginPath();ctx.moveTo(P.X(p[0]+dy*t),P.Y(p[1]-dx*t));ctx.lineTo(P.X(q[0]+dy*t),P.Y(q[1]-dx*t));ctx.stroke()}ctx.restore();
@@ -2263,7 +2263,7 @@ init(stage,g){
       poly2([o,A,Bp],'#FFF3C4','#1D1842',4);ctx.strokeStyle=PUR;ctx.lineWidth=2.5;const s=14;ctx.strokeRect(P.X(o[0]),P.Y(o[1])-s,s,s);
       label(`a = ${a}`,P.X(o[0]+a/2),P.Y(o[1])+18,RED);label(`b = ${b}`,P.X(o[0])-26,P.Y(o[1]+b/2),BLUE);
       handle(P.X(A[0]),P.Y(A[1]),RED);handle(P.X(Bp[0]),P.Y(Bp[1]),BLUE)}
-    if(mode==='circ'){const r=circ.r,C=2*Math.PI*r;P=plane(ctx,W,H,[-r-1.2,C+r+1.2],[-r-1.6,r+1.6],{pad:10});
+    if(mode==='circ'){const r=circ.r,C=2*Math.PI*r;if(!fm.size||view.circ==null)view.circ=r;const vr=view.circ,VC=2*Math.PI*vr;P=plane(ctx,W,H,[-vr-1.2,VC+vr+1.2],[-vr-1.6,vr+1.6],{pad:10});
       if(circ.roll===true){circ.unroll=Math.min(1,circ.unroll+.005);if(circ.unroll>=1){circ.roll='done';const key='r'+r;if(!unrolled.has(key)){unrolled.add(key);win(stage,null,null,`C ≈ ${fmt(C,2)}`)}else{cheer();floaty(stage,innerWidth/2,innerHeight/2,`C ≈ ${fmt(C,2)}`)}}}
       const u=circ.unroll,L=C*u,cx=L,rot=u*2*Math.PI;
       // the ground and the part already unrolled
@@ -2303,7 +2303,7 @@ init(stage,g){
     if(mode==='pyth'&&/^Arrow/.test(k)){if(k==='ArrowLeft'||k==='ArrowRight')tri.a=clamp(tri.a+(k==='ArrowRight'?1:-1),1,10);else tri.b=clamp(tri.b+(k==='ArrowUp'?1:-1),1,8);checkTrip();return true}
     if(mode==='poly'&&(k==='r'||k==='R')){const id='reg';stage.querySelector('#'+id).click();return true}return false});
   g.loop(()=>{frame++;draw();if(mode==='circ'&&circ.roll===true&&frame%10===0)panelHTML()});
-  GAMES.geo._debug={setMode,get poly(){return poly},tri,unit,circ,found,panelHTML};
+  GAMES.geo._debug={setMode,get poly(){return poly},tri,unit,circ,found,panelHTML,toPx:(x,y)=>[P.X(x),P.Y(y)],get mode(){return mode},nameOf,area};
 }}});
 
 /* ============================================================
@@ -2412,7 +2412,7 @@ init(stage,g){
     if(k===' '||k==='Enter'){stage.querySelector('#ride').click();return true}if(k.toLowerCase()==='n'){stage.querySelector('#new').click();return true}
     if(/^[1-5]$/.test(k)){ui.top.querySelectorAll('[data-fam]')[+k-1].click();return true}return false});
   g.loop(()=>{step();draw()});
-  GAMES.graph._debug={get q(){return q},get target(){return target},get stars(){return stars},setQ(o){Object.assign(q,o);sync()},ride(){stage.querySelector('#ride').click()},setFam};
+  GAMES.graph._debug={get q(){return q},get target(){return target},get stars(){return stars},setQ(o){Object.assign(q,o);sync()},ride(){stage.querySelector('#ride').click()},setFam,FAM,get lvl(){return lvl},get ride_(){return ride},get area(){return area},handles:()=>handles(),get P(){return P},get fam(){return fam}};
 }}});
 
 /* ============================================================
@@ -2525,7 +2525,7 @@ init(stage,g){
     const q=S[mode];if(mode==='sun')valTag([[`α = ${fmt(q.a,1)}°  (slide sideways)`,'#E8384F'],[`n = ${q.n} seeds  (slide up or down)`,'#2F6FE0']]);
     if(mode==='spiro')valTag([[`r = ${q.r}  gear size (sideways)`,'#2F6FE0'],[`d = ${q.d}  pen spot (up or down)`,'#1FA463']]);
     if(mode==='tree')valTag([[`θ = ${q.ang}°  spread (sideways)`,'#E8384F'],[`k = ${fmt(q.ratio,2)}  branch length (up or down)`,'#2F6FE0']])});
-  GAMES.art._debug={S,setMode};
+  GAMES.art._debug={S,setMode,orbit,get mode(){return mode}};
 }}});
 
 /* ============================================================
@@ -3174,7 +3174,7 @@ init(stage,g){
     if(mode==='sieve'&&/^[0-9]$/.test(k)){typed=(typed+k).slice(-3);const n=+typed;gd.querySelectorAll('.pot.typing').forEach(x=>x.classList.remove('typing'));const el=gd.querySelector(`[data-n="${n}"]`);if(el){el.classList.add('typing');el.focus({preventScroll:false})}return true}
     if(mode==='sieve'&&k==='Enter'&&typed){const el=gd.querySelector(`[data-n="${+typed}"]`);typed='';if(el){el.classList.remove('typing');el.click()}return true}
     if(k.toLowerCase()==='n'){stage.querySelector('#again').click();return true}return false});
-  GAMES.primes._debug={setMode,get dead(){return dead},get tree(){return tree}};
+  GAMES.primes._debug={setMode,get dead(){return dead},get tree(){return tree},get pair(){return pair},PAIRS,get crowned(){return crowned}};
 }}});
 
 /* ============================================================
@@ -3350,7 +3350,7 @@ init(stage,g){
     if(e.key==='Backspace'){const l=listAt(target);if(l.length){l.pop();render();tone(300,.06,'triangle')}else if(target){target=null;render()}return true}
     if(/^[2-9]$/.test(k)&&target&&target.includes('.')){const parts=target.split('.'),i=+parts.pop(),b=listAt(parts.length===1?parts[0]:parts.join('.'))[i];if(b&&b.body){b.n=+k;render()}return true}
     if(e.key==='ArrowDown'){target=null;render();return true}if(k==='n'){stage.querySelector('#nx').click();return true}return false});
-  GAMES.robo._debug={setProg(p,f){prog=p;fnBody=f||[];render()},go(){stage.querySelector('#run').click()},load,get gems(){return gems},get run(){return run}};
+  GAMES.robo._debug={setProg(p,f){prog=p;fnBody=f||[];render()},go(){stage.querySelector('#run').click()},load,get gems(){return gems},get run(){return run},LV,get li(){return li},get prog(){return prog},get fnBody(){return fnBody},get rob(){return rob}};
 }}});
 
 /* ============================================================
