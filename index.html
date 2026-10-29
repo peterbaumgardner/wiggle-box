@@ -504,6 +504,47 @@ img,canvas{-webkit-user-drag:none}
 @media (max-width:600px){.tools{gap:6px;padding:8px 6px}.tools .sw{width:40px;height:40px;border-width:3px}.tools .tb{height:44px;min-width:44px;font-size:22px;padding:0 6px}.tools .sep{display:none}}
 .popgrid{min-width:min(480px,calc(100vw - 84px));grid-template-columns:repeat(auto-fill,minmax(min(96px,calc((100vw - 110px)/3)),1fr))}
 .pop{box-sizing:border-box}.popgrid{min-width:min(480px,calc(100vw - 96px))}
+/* the hidden attribute always wins (Robo's "My move" box showed on every level because a card style overrode it) */
+[hidden]{display:none!important}
+/* Robo Code on a narrow phone: blocks on top, program underneath, so neither gets squeezed into a sliver */
+@media (max-width:600px) and (orientation:portrait){.lab-panel:has(>.rkeep){flex-direction:column;gap:8px}.lab-panel>.rkeep{width:100%;flex:none!important}.rkeep .pal{max-width:40%}}
+/* ---------- short landscape screens (a phone on its side) ----------
+   The header turns into a slim column on the left and the tool docks and info cards move to the right, so the play area
+   keeps most of the height. Before this a phone on its side left 30-150 px for the game itself. */
+@media (orientation:landscape) and (max-height:540px){
+  #game{flex-direction:row}
+  .gbar{flex-direction:column;justify-content:flex-start;padding:max(8px,env(safe-area-inset-top,0px)) 6px 8px max(8px,env(safe-area-inset-left,0px));gap:10px}
+  .gbar .gtitle{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .gbar .back{width:50px;height:50px;font-size:26px}
+  .gbar .pill{padding:3px 8px;font-size:16px;writing-mode:horizontal-tb}
+  .stage{margin:8px max(8px,env(safe-area-inset-right,0px)) 8px 0}
+  .lab{display:grid;grid-template-columns:minmax(0,1fr) min(300px,36vw);grid-template-rows:auto minmax(0,1fr)}
+  .lab-top{grid-column:1/-1;padding:5px 8px}
+  .lab-main{grid-column:1;grid-row:2;min-width:0}
+  .lab>.idock{grid-column:2;grid-row:2;border-top:0;border-left:var(--edge);overflow-y:auto;overscroll-behavior:contain;min-height:0}
+  .lab:has(>.idock.closed):not(:has(.keep:not([hidden]))){grid-template-columns:minmax(0,1fr) min(190px,24vw)}
+  .lab>.idock .itabs{padding:6px 6px 0}
+  .lab>.idock.closed .itabs{padding-bottom:6px}
+  .lab>.idock .itab{font-size:13px;padding:4px 9px;min-height:36px;max-width:100%}
+  .lab-panel{flex-direction:column;gap:8px;padding:8px}
+  .lab-panel .keep{max-width:none}
+  .idock .fx.ion{column-width:auto;font-size:16px}
+  .rkeep{flex-direction:column!important}
+  .rkeep .pal{max-width:none}
+  .rkeep .code{max-height:none}
+  .simwrap{flex-direction:row}
+  .dock{width:min(190px,26vw);border-top:0;border-left:var(--edge);overflow-y:auto;overscroll-behavior:contain;padding:6px}
+  .dock .drow{gap:5px;justify-content:center}
+  .dock .tool{min-width:0;width:calc(50% - 3px);padding:3px 2px 4px;border-width:2.5px;border-radius:14px;font-size:11px}
+  .dock .tool .ti{font-size:20px}
+  .dock .tool .caret,.dock .sep,.dock .otext{display:none}
+  .cdot{width:34px!important;height:34px!important}
+  .simhint{font-size:14px;top:8px}
+  .pic{font-size:clamp(44px,14vh,90px);padding:2px 16px;border-radius:24px}
+  .slot{width:clamp(44px,15vh,80px);font-size:clamp(28px,9vh,52px)}
+  .lt{width:clamp(48px,16vh,84px);font-size:clamp(28px,9vh,52px)}
+  .puzhud{top:6px;gap:6px}.puzhud .pbtn{padding:4px 12px;font-size:15px}.puzhud .pbtn.go{font-size:17px}.plv{font-size:13px;padding:4px 10px}
+}
 </style>
 
 <div id="home" class="view">
@@ -2566,7 +2607,8 @@ init(stage,g){
   /* ---------- geometry ---------- */
   function segs(p){const cx=p.i+.5,cy=p.j+.5,out=[];
     if(p.k==='mirror'||p.k==='split'){const a=p.a*Math.PI/180,ux=Math.cos(a)*.46,uy=Math.sin(a)*.46;out.push({x1:cx-ux,y1:cy-uy,x2:cx+ux,y2:cy+uy,p,t:p.k})}
-    else if(p.k==='glass'||p.k==='wall'){const h=p.k==='glass'?.42:.5,c=[[cx-h,cy-h],[cx+h,cy-h],[cx+h,cy+h],[cx-h,cy+h]];for(let q=0;q<4;q++)out.push({x1:c[q][0],y1:c[q][1],x2:c[(q+1)%4][0],y2:c[(q+1)%4][1],p,t:p.k})}
+    /* a glass block turns like the other pieces (it used to ignore its angle, so tapping it did nothing) */
+    else if(p.k==='glass'||p.k==='wall'){const h=p.k==='glass'?.42:.5,a=p.k==='glass'?(p.a||0)*Math.PI/180:0,C=Math.cos(a),S=Math.sin(a),c=[[-h,-h],[h,-h],[h,h],[-h,h]].map(([x,y])=>[cx+x*C-y*S,cy+x*S+y*C]);for(let q=0;q<4;q++)out.push({x1:c[q][0],y1:c[q][1],x2:c[(q+1)%4][0],y2:c[(q+1)%4][1],p,t:p.k})}
     else if(p.k==='prism'){const r=.46,c=[0,1,2].map(q=>{const a=(p.a-90+q*120)*Math.PI/180;return[cx+Math.cos(a)*r,cy+Math.sin(a)*r]});for(let q=0;q<3;q++)out.push({x1:c[q][0],y1:c[q][1],x2:c[(q+1)%3][0],y2:c[(q+1)%3][1],p,t:'prism'})}
     return out}
   function hitSeg(x,y,dx,dy,s){const ex=s.x2-s.x1,ey=s.y2-s.y1,den=dx*ey-dy*ex;if(Math.abs(den)<1e-12)return null;const t=((s.x1-x)*ey-(s.y1-y)*ex)/den,u=((s.x1-x)*dy-(s.y1-y)*dx)/den;
@@ -2638,7 +2680,7 @@ init(stage,g){
     for(const p of pieces){const cx=ox+(p.i+.5)*cs,cy=oy+(p.j+.5)*cs;ctx.save();ctx.translate(cx,cy);
       if(p.k==='laser'){ctx.rotate(p.a*Math.PI/180);ctx.fillStyle='#7E8BB8';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(-cs*.4,-cs*.18,cs*.7,cs*.36,6);ctx.fill();ctx.stroke();ctx.fillStyle=p.white?'#fff':'#FF3B3B';ctx.beginPath();ctx.arc(cs*.32,0,cs*.08,0,7);ctx.fill()}
       if(p.k==='mirror'||p.k==='split'){ctx.rotate(p.a*Math.PI/180);ctx.strokeStyle=p.k==='split'?'rgba(189,239,255,.7)':'#DDE6FF';ctx.lineWidth=p.k==='split'?5:7;ctx.beginPath();ctx.moveTo(-cs*.46,0);ctx.lineTo(cs*.46,0);ctx.stroke();ctx.strokeStyle='#7E8BB8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-cs*.46,4);ctx.lineTo(cs*.46,4);ctx.stroke()}
-      if(p.k==='glass'){ctx.fillStyle='rgba(150,220,255,.22)';ctx.strokeStyle='rgba(189,239,255,.9)';ctx.lineWidth=2;ctx.fillRect(-cs*.42,-cs*.42,cs*.84,cs*.84);ctx.strokeRect(-cs*.42,-cs*.42,cs*.84,cs*.84)}
+      if(p.k==='glass'){ctx.rotate((p.a||0)*Math.PI/180);ctx.fillStyle='rgba(150,220,255,.22)';ctx.strokeStyle='rgba(189,239,255,.9)';ctx.lineWidth=2;ctx.fillRect(-cs*.42,-cs*.42,cs*.84,cs*.84);ctx.strokeRect(-cs*.42,-cs*.42,cs*.84,cs*.84)}
       if(p.k==='prism'){ctx.rotate(p.a*Math.PI/180);ctx.fillStyle='rgba(200,230,255,.25)';ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();for(let q=0;q<3;q++){const a=(-90+q*120)*Math.PI/180;ctx.lineTo(Math.cos(a)*cs*.46,Math.sin(a)*cs*.46)}ctx.closePath();ctx.fill();ctx.stroke()}
       if(p.k==='wall'){ctx.fillStyle='#4A4470';ctx.fillRect(-cs/2,-cs/2,cs,cs);ctx.strokeStyle='#2A2550';ctx.strokeRect(-cs/2+2,-cs/2+2,cs-4,cs-4)}
       if(p.k==='target'){const on=lit.has(p),col=p.col==null?'#7BE0FF':SPEC[p.col][0];if(on){const gr=ctx.createRadialGradient(0,0,2,0,0,cs*.6);gr.addColorStop(0,col);gr.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,cs*.6,0,7);ctx.fill()}
@@ -2678,7 +2720,7 @@ function physicsLab(stage,g){
   const CC=o=>{const w=o.plugin&&o.plugin.wb;delete o.plugin;const c=Constraint.create(o);c.plugin={wb:w||{}};return c};
   const TOOLS=[['grab','✋','Grab'],['add','➕','Add'],['ramp','📏','Ramp'],['shape','✏️','Draw'],['pin','📌','Pin'],['boom','💥','Boom'],['erase','🧽','Erase']];
   const SCENES=[['play','🛝','Playground'],['domino','🁢','Dominoes'],['tower','🏰','Tower'],['cars','🏁','Race'],['puzzle','🧩','Puzzles'],['empty','🧹','Empty']];
-  const GRAV=[['earth','🌍','Earth',1,'On Earth, things fall down.'],['moon','🌙','Moon',.165,'On the Moon, gravity is only 1/6 as strong. Things fall slowly!'],['space','🚀','Space',0,'In space, there is no gravity. Everything floats!'],['flip','🙃','Upside down',-1,'Upside down! Now things fall up!']];
+  const GRAV=[['earth','🌍','Earth',1,'On Earth, things fall down.'],['moon','🌙','Moon',.165,'On the Moon, gravity is only 1/6 as strong and there is no air. Things fall slowly, and even balloons fall!'],['space','🚀','Space',0,'In space, there is no gravity. Everything floats!'],['flip','🙃','Upside down',-1,'Upside down! Now things fall up!']];
   const ITEMS=[
     ['ball','⚽','Bouncy ball','Rubber is bouncy!'],['crate','📦','Crate','Wood!'],['brick','🧱','Brick','Stone is heavy!'],['ice','🧊','Ice block','Ice is slippery!'],
     ['tri','🔺','Triangle','A triangle!'],['plank','🪵','Plank','A long plank!'],['balloon','🎈','Balloon','Balloons float up!'],['buddy','🙂','Bloop','Hi, I am Bloop!'],
@@ -2869,7 +2911,7 @@ function physicsLab(stage,g){
         if(hit.length){grabBody(f,hit[hit.length-1],p);return}
         /* a second finger on empty space while something is held = twist handle */
         if(grabs.size&&tool==='grab'){const gb=[...grabs.values()][0].bodyB;f.data.twist={b:gb,a:Math.atan2(p.y-gb.position.y,p.x-gb.position.x)};return}
-        if(tool==='add'){const b=spawn(item,p.x,p.y);pop(.8);if(b&&!b.isStatic)grabBody(f,b,b.position);return}
+        if(tool==='add'){const b=spawn(item,p.x,p.y);pop(.8);if(b&&!b.isStatic){grabBody(f,b,b.position);f.data.spawned=true}return}
         puff(p.x,p.y,8,'rgba(255,255,255,.6)',2.5,5);tone(300,.06,'sine',.08);return}
       if(tool==='ramp'||tool==='shape'){f.data.pts=[p];f.data.col=tool==='shape'?pick(COLORS):'#FFC83D';return}
       if(tool==='pin'){const near=pins.findIndex(c=>Math.hypot(c.pointA.x-p.x,c.pointA.y-p.y)<u*.5);
@@ -2884,7 +2926,8 @@ function physicsLab(stage,g){
       if(tool==='erase')eraseAt(p)},
     wheel(w){const hit=bodiesAt(toWorld(w.x,w.y)).filter(b=>!b.isStatic);const b=hit[hit.length-1]||(grabs.size?[...grabs.values()][0].bodyB:null);if(b){spin(b,w.dy*.12);focus=b}},
     up(f){const gr=grabs.get(f.id);const tapped=performance.now()-f.data.t0<280&&Math.hypot(f.x-f.sx,f.y-f.sy)<10;
-      if(gr){Composite.remove(world,gr);grabs.delete(f.id);if(tapped)tapAction(gr.bodyB)}
+      /* the tap that adds a thing is not also a tap on it (it used to pop a new balloon, set off a new bomb and flip a new car) */
+      if(gr){Composite.remove(world,gr);grabs.delete(f.id);if(tapped&&!f.data.spawned)tapAction(gr.bodyB)}
       if(f.data.pts){const pts=f.data.pts;if(pts.length>1||tool==='ramp'){makeInk(pts,tool==='shape',f.data.col);tone(500,.1,'triangle');tone(750,.12,'triangle',.15,.06)}}
     }});
   /* turn a body (and keep it turning a little after you let go) */
@@ -2977,14 +3020,17 @@ function physicsLab(stage,g){
   function forces(){
     for(const b of Composite.allBodies(world)){if(b.isStatic)continue;const v=b.velocity,sp=Math.hypot(v.x,v.y);if(sp>VMAX)Body.setVelocity(b,{x:v.x*VMAX/sp,y:v.y*VMAX/sp});if(Math.abs(b.angularVelocity)>.6)Body.setAngularVelocity(b,Math.sign(b.angularVelocity)*.6)}
     const G=GRAV[gi][3];engine.gravity.y=G;
+    /* the Moon and space have no air: no drag, and nothing for a balloon to float on */
+    const air=GRAV[gi][0]==='earth'||GRAV[gi][0]==='flip';
+    for(const b of Composite.allBodies(world)){if(b.isStatic||!b.plugin||!b.plugin.wb)continue;const w=b.plugin.wb;if(w.fa0==null)w.fa0=b.frictionAir;b.frictionAir=air?w.fa0:0}
     for(const b of Composite.allBodies(world)){const w=wbOf(b);if(!w.kind||b.isStatic&&w.kind!=='fan')continue;
-      if(w.kind==='balloon'){Body.applyForce(b,b.position,{x:Math.sin(frame*.03+b.id)*b.mass*.00005,y:-b.mass*GS*(G===0?0:Math.sign(G)*Math.max(Math.abs(G),.5))*1.7})}
+      if(w.kind==='balloon'&&air){Body.applyForce(b,b.position,{x:Math.sin(frame*.03+b.id)*b.mass*.00005,y:-b.mass*GS*(G===0?0:Math.sign(G)*Math.max(Math.abs(G),.5))*1.7})}
       if(w.kind==='car'){for(const wh of w.wheels)Body.setAngularVelocity(wh,lerp(wh.angularVelocity,w.dir*.27,.2))}
       if(w.kind==='rocket'&&w.thrust>0){w.thrust--;const a=b.angle,dir={x:Math.sin(a),y:-Math.cos(a)};Body.applyForce(b,b.position,{x:dir.x*b.mass*GS*2.4,y:dir.y*b.mass*GS*2.4});
         const tail={x:b.position.x-dir.x*u,y:b.position.y-dir.y*u};if(frame%2===0)parts.push({x:tail.x,y:tail.y,vx:-dir.x*4+(Math.random()-.5)*2,vy:-dir.y*4+(Math.random()-.5)*2,l:1,r:7+Math.random()*6,c:pick(['#FFC83D','#FF8A2B','#FFF3B0']),d:.05});
         if(frame%6===0)noise(.12,500+Math.random()*300,.7,.12)}
       if(w.kind==='bomb'){if(--w.fuse<=0){removeBody(b);boom(b.position.x,b.position.y,1.15)}else if(w.fuse%(w.fuse<60?10:30)===0)tone(w.fuse<60?1200:900,.04,'square',.05)}
-      if(w.kind==='fan'){for(const o of Composite.allBodies(world)){if(o.isStatic)continue;const dx=(o.position.x-b.position.x)*w.dir,dy=o.position.y-b.position.y;
+      if(w.kind==='fan'&&air){for(const o of Composite.allBodies(world)){if(o.isStatic)continue;const dx=(o.position.x-b.position.x)*w.dir,dy=o.position.y-b.position.y;
         if(dx>0&&dx<u*10&&Math.abs(dy)<u*1.6+dx*.18){wake(o);const f=(1-dx/(u*10))*.0006*(wbOf(o).kind==='balloon'?2.5:1);Body.applyForce(o,o.position,{x:w.dir*f*o.mass,y:0})}}
         if(frame%4===0)parts.push({x:b.position.x+w.dir*u*.8,y:b.position.y+(Math.random()-.5)*u*1.4,vx:w.dir*(7+Math.random()*3),vy:0,l:1,r:2,c:'rgba(255,255,255,.55)',d:.03,streak:true})}
       // forget far-away things
@@ -3086,7 +3132,12 @@ function physicsLab(stage,g){
 
   /* ---------- loop ---------- */
   let acc=0;
-  function resize(){const nd=fitCanvas(cv);if(Math.abs(nd.w-W)<2&&Math.abs(nd.h-H)<2&&nd.d===dims.d)return;dims=nd;W=nd.w;H=nd.h;bounds();drawBg()}
+  /* A puzzle is laid out in fractions of the screen. When the screen turns or resizes, the puzzle is laid out again
+     for the new size and the child's ramps come along, so the walls, the star and the ramps never end up off screen. */
+  function resize(){const nd=fitCanvas(cv);if(Math.abs(nd.w-W)<2&&Math.abs(nd.h-H)<2&&nd.d===dims.d)return;
+    const W0=W,H0=H,keep=puzzle&&Composite.allBodies(world).filter(b=>wbOf(b).kind==='ink'&&!wbOf(b).fixed).map(b=>wbOf(b).pts.map(p=>({x:(p.x+b.position.x)/W0,y:(p.y+b.position.y)/H0})));
+    dims=nd;W=nd.w;H=nd.h;if(keep)u=clamp(Math.min(W,H)/12,26,58);bounds();drawBg();
+    if(keep){const i=puzzle.i;startPuzzle(i);for(const r of keep)makeInk(r.map(p=>({x:p.x*W,y:p.y*H})),false,'#FFC83D')}}
   const ro=new ResizeObserver(resize);ro.observe(cv);g.onEnd(()=>{ro.disconnect();Events.off(engine);Engine.clear(engine)});
   scene('play');
   kbPointer(g,cv);
@@ -3108,7 +3159,7 @@ function physicsLab(stage,g){
     const dyn=Composite.allBodies(world).filter(b=>!b.isStatic&&wbOf(b).kind);if(dyn.length>170){dyn.sort((a,b)=>wbOf(a).born-wbOf(b).born);removeBody(dyn[0])}
     draw();
   });
-  GAMES.physics._debug={engine,world,get frame(){return frame},spawn,scene,startPuzzle,boom,get puzzle(){return puzzle},makeInk};
+  GAMES.physics._debug={engine,world,get frame(){return frame},spawn,scene,startPuzzle,boom,get puzzle(){return puzzle},makeInk,LEVELS,get W(){return W},get H(){return H},get u(){return u},get tool(){return tool},get paused(){return paused},get slow(){return slow},get gi(){return gi},PXM,GS,get pins(){return pins},get item(){return item}};
 }
 
 /* ============================================================
