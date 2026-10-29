@@ -155,7 +155,8 @@ button:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
 .holes{display:flex;gap:clamp(10px,3vw,30px);justify-content:center;flex-wrap:wrap;background:var(--paper);border:var(--edge);border-radius:24px;padding:16px;width:100%}
 .hole,.piece{width:clamp(80px,14vw,140px);aspect-ratio:1;position:relative}
 .hole svg,.piece svg{width:100%;height:100%;display:block;overflow:visible}
-.hole svg *{fill:rgba(29,24,66,.1);stroke:var(--ink);stroke-width:4;stroke-dasharray:9 7;stroke-linejoin:round}
+/* only the hole's own outline is dashed and grey; a shape dropped into the hole keeps its colour (it used to turn into an empty-looking outline) */
+.hole>svg *{fill:rgba(29,24,66,.1);stroke:var(--ink);stroke-width:4;stroke-dasharray:9 7;stroke-linejoin:round}
 .piece svg *{stroke:var(--ink);stroke-width:5;stroke-linejoin:round}
 .hole .piece{position:absolute;inset:0;width:100%;pointer-events:none;animation:bump .4s}
 .hole .piece .rot{transform:none!important}
@@ -1721,6 +1722,7 @@ init(stage,g){
     g.raf(frame);
   }
   for(let k=0;k<3;k++){spawn();const b=bubs[bubs.length-1];b.y=stage.clientHeight*(.35+k*.2)}
+  GAMES.bubbles._debug={get bubs(){return bubs},get pops(){return pops}};
   g.raf(frame);
   /* keyboard: type the letter or number you see, or Space to pop the nearest bubble */
   g.key(e=>{const k=e.key.toLowerCase();let b=null;
@@ -1830,6 +1832,7 @@ init(stage,g){
   }
   round();
   g.key(e=>{if(e.key===' '||e.key==='Enter'||e.key==='ArrowUp'){const f=tray.querySelector('.food:not([style*="pointer-events"])');if(f)fly(f);return true}return false});
+  GAMES.feed._debug={get target(){return target},get eaten(){return eaten},get a(){return a},get b(){return b},get busy(){return busy}};
 }},
 
 /* ---------------- Shape Sorter ---------------- */
@@ -1899,6 +1902,7 @@ init(stage,g){
   padsEl.addEventListener('pointermove',e=>{if(!onKey.has(e.pointerId))return;const el=document.elementFromPoint(e.clientX,e.clientY),p=el&&el.closest('.pad');if(!p)return;const i=+p.dataset.i;if(i!==onKey.get(e.pointerId)){onKey.set(e.pointerId,i);hit(i)}});
   const lift=e=>onKey.delete(e.pointerId);addEventListener('pointerup',lift);addEventListener('pointercancel',lift);g.onEnd(()=>{removeEventListener('pointerup',lift);removeEventListener('pointercancel',lift)});
   const KEYS='asdfghjk';
+  GAMES.music._debug={N,SONG,get seq(){return seq},get pos(){return pos},get mode(){return mode},get locked(){return locked}};
   g.key(e=>{if(e.repeat)return false;const k=e.key.toLowerCase();let i=KEYS.indexOf(k);if(i<0&&/^[1-8]$/.test(k))i=+k-1;if(i<0)return false;hit(i);return true});
   setMode('free');
 }},
@@ -1934,6 +1938,7 @@ init(stage,g){
   round();
   g.key(e=>{const k=e.key.toLowerCase();if(!/^[a-z]$/.test(k))return false;const t=[...tiles.children].find(x=>!x.classList.contains('used')&&x.dataset.l===k&&k===word[posn])||[...tiles.children].find(x=>!x.classList.contains('used')&&x.dataset.l===k);
     if(t)tap(t);else{buzz()}return true});
+  GAMES.words._debug={W3,W4,get word(){return word},get posn(){return posn}};
 }}
 });
 
@@ -2001,6 +2006,7 @@ init(stage,g){
   g.later(()=>{if(!rockets.length&&!sparks.length)launch(W*.5,H*.35)},900);
   g.key(e=>{if(e.key===' '||e.key==='Enter'){launch(W*(.15+Math.random()*.7),H*(.15+Math.random()*.4));return true}
     const m={c:'colors',s:'shapes',n:'count'}[e.key.toLowerCase()];if(m){stage.querySelector(`[data-m="${m}"]`).click();return true}return false});
+  GAMES.fireworks._debug={get rockets(){return rockets},get sparks(){return sparks},get count(){return count},get mode(){return mode}};
   g.loop(()=>{frame++;
     for(let i=rockets.length-1;i>=0;i--){const r=rockets[i];r.t+=.028;const e=1-(1-r.t)**2;const sx=r.x,sy=r.y;r.y=lerp(H+10,r.ty,e);r.x=lerp(r.x,r.tx,.06);
       sparks.push({x:sx,y:sy,vx:(Math.random()-.5),vy:1+Math.random(),l:.5,c:'#FFB45C',r:1.6});if(r.t>=1){rockets.splice(i,1);explode(r)}}
@@ -4080,7 +4086,8 @@ init(stage,g){
   const trail=[];
   function layout(){k=Math.min(dims.h*.7/140,dims.w*.5/100);ox=dims.w/2-50*k;oy=dims.h/2-70*k-dims.h*.02}
   function dens(poly){const o=[];for(let i=1;i<poly.length;i++){const a=poly[i-1],b=poly[i],l=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(l/2));for(let j=0;j<n;j++)o.push([a[0]+(b[0]-a[0])*j/n,a[1]+(b[1]-a[1])*j/n])}o.push(poly[poly.length-1]);return o}
-  function load(i){idx=(i+SETS[set].length)%SETS[set].length;ch=SETS[set][idx];strokes=GL[ch].map(dens);si=0;p=0;done=false;celebrate=0;
+  let rid=0;
+  function load(i){idx=(i+SETS[set].length)%SETS[set].length;ch=SETS[set][idx];strokes=GL[ch].map(dens);si=0;p=0;done=false;celebrate=0;rid++;tracing=null;
     layout();say(set==='abc'?`Let's trace ${ch}`:`Let's trace the number ${NUMW[+ch]}`);}
   const toPx=q=>[ox+q[0]*k,oy+q[1]*k],tol=()=>Math.max(16,k*15);
   function startTrace(f){if(done)return;const s=strokes[si],q=toPx(s[p]);if(Math.hypot(f.x-q[0],f.y-q[1])<tol()*1.7){tracing=f.id;tone(500,.06,'triangle',.1)}
@@ -4094,7 +4101,7 @@ init(stage,g){
       if(si>=strokes.length){done=true;finish()}else{hint(`Great! Now line ${si+1}.`,1600)}}}
   function finish(){celebrate=1;addStar();cheer();const r=cv.getBoundingClientRect();burst(r.left+dims.w/2,r.top+oy+70*k,70);
     if(set==='abc'){const L=LETTERS.find(l=>l[0]===ch);say(`${ch}! ${ch} is for ${L[1]}!`)}else say(`${NUMW[+ch]}! You traced ${NUMW[+ch]}!`);
-    g.later(()=>{if(g.alive&&done)load(idx+1)},3800)}
+    const my=rid;g.later(()=>{if(g.alive&&done&&my===rid)load(idx+1)},3800)}
   fingers(cv,{down(f){startTrace(f)},move(f){follow(f)},up(f){if(tracing===f.id)tracing=null}});
   stage.querySelector('.drow').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.set){set=b.dataset.set;stage.querySelectorAll('[data-set]').forEach(x=>x.classList.toggle('on',x===b));load(0)}
@@ -4142,7 +4149,7 @@ init(stage,g){
       if(p>=s.length-3){si++;p=0;tone(660,.12,'triangle');if(si>=strokes.length){done=true;finish()}}return true}
     if(/^[a-z0-9]$/i.test(e.key)){const c=e.key.toUpperCase(),inSet=SETS[set].indexOf(c);if(inSet<0){set=set==='abc'?'num':'abc';stage.querySelectorAll('[data-set]').forEach(x=>x.classList.toggle('on',x.dataset.set===set))}load(SETS[set].indexOf(c));return true}return false});
   load(0);g.loop(()=>{frame++;draw()});
-  GAMES.trace._debug={get state(){return{ch,si,p,done,n:strokes.map(s=>s.length)}},toPx:q=>toPx(q),get strokes(){return strokes}};
+  GAMES.trace._debug={get state(){return{ch,si,p,done,n:strokes.map(s=>s.length)}},toPx:q=>toPx(q),get strokes(){return strokes},tol,SETS};
 }}});
 
 /* ============================================================
