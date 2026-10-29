@@ -1544,7 +1544,7 @@ init(stage,g){
     if(k===' '||k==='Enter'){const bs=[...stage.querySelectorAll('#ex [data-n]')].filter(b=>b.dataset.n!=='0');(e.shiftKey?bs[bs.length-1]:bs[0]).click();return true}
     if(k.toLowerCase()==='c'){stage.querySelector('#ex [data-n="0"]').click();return true}return false});
   g.loop(()=>{frame++;ctx.setTransform(dims.d,0,0,dims.d,0,0);if(mode==='bean'){stepBean();drawBean()}if(mode==='dice')drawDice();if(mode==='coin')drawCoin()});
-  GAMES.chance._debug={get bins(){return bins},get total(){return total}};
+  GAMES.chance._debug={get bins(){return bins},get total(){return total},get sums(){return sums},get rolls(){return rolls},get coins(){return coins},get p(){return p}};
 }}});
 
 /* ============================================================
@@ -1674,7 +1674,7 @@ init(stage,g){let pend=null;
   edges.set(key(1,1,'v'),{kind:'bat',V:3,flip:true});edges.set(key(1,1,'h'),{kind:'wire'});edges.set(key(2,1,'h'),{kind:'bulb'});edges.set(key(3,1,'v'),{kind:'wire'});edges.set(key(1,2,'h'),{kind:'wire'});
   solve();drawTasks();ui.hint('Draw a wire to close the gap and light the bulb!',5000);
   g.loop(()=>{frame++;draw()});
-  GAMES.circuit._debug={edges,solve,get sol(){return sol},key,done,setTool(t){tool=t},place:(a,b)=>place(a,b)};
+  GAMES.circuit._debug={edges,solve,get sol(){return sol},key,done,setTool(t){tool=t},place:(a,b)=>place(a,b),geom:()=>({ox,oy,sp,NX,NY}),get sel(){return sel}};
 }}});
 
 /* ============================================================
