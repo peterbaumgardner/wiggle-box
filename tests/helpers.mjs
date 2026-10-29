@@ -127,3 +127,20 @@ export async function reachable(page, locator) {
 
 /* Advance the app's clock deterministically isn't possible with rAF, so tests wait on observable state instead. */
 export const sleep = (page, ms) => page.waitForTimeout(ms);
+
+/* Click a toolbar button the way a child would, even when the toolbar has folded that group into a "▾" or "⋯" menu
+   on a small screen: open each fold menu until the matching item shows up, then tap it. */
+export async function pick(page, container, selector) {
+  const target = page.locator(`${container} ${selector}`).first();
+  if (await target.isVisible()) { await target.click(); return; }
+  const html = await target.evaluate(el => el.innerHTML);
+  const folds = page.locator(`${container} .cgbtn:not(.cgend)`);
+  for (let i = 0; i < await folds.count(); i++) {
+    await folds.nth(i).click();
+    const items = page.locator('.pop .popitem');
+    const n = await items.count();
+    for (let k = 0; k < n; k++) if (await items.nth(k).evaluate((el, h) => el.innerHTML === h, html)) { await items.nth(k).click(); return; }
+    await page.keyboard.press('Escape');
+  }
+  throw new Error(`could not reach ${container} ${selector}`);
+}

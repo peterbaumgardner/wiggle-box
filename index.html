@@ -438,7 +438,8 @@ img,canvas{-webkit-user-drag:none}
 .lab-panel .keep .fx,.lab-panel .keep.fx{display:block}
 /* sandbox games: the same tabs sit along the bottom of the play area, see-through so the game shows behind */
 .fxo{position:absolute;left:0;right:0;bottom:0;z-index:5;background:transparent;border-top:0;pointer-events:none}
-.fxo .itabs{pointer-events:auto;background:transparent;border-bottom:0;padding:0 10px}
+/* only the tabs themselves take touches; the empty strip beside them belongs to the play area */
+.fxo .itabs{pointer-events:none;background:transparent;border-bottom:0;padding:0 10px}.fxo .itab,.fxo .inav{pointer-events:auto}
 .fxo .itab{bottom:0;border-radius:14px 14px 0 0;background:rgba(220,227,255,.95)}
 .fxo .itab.on{background:rgba(255,255,255,.95);border-bottom-color:transparent}
 .fxo.closed .itab{border-radius:14px 14px 0 0}
@@ -821,7 +822,8 @@ function patchPanel(el,html){const tmp=document.createElement('div');tmp.innerHT
   if(!el.querySelector('input')||o.length!==n.length||el.querySelectorAll('input').length!==tmp.querySelectorAll('input').length){el.innerHTML=html;return}
   o.forEach((x,i)=>{if(x.innerHTML!==n[i].innerHTML)x.replaceWith(n[i])})}
 
-function fxOverlay(area,openByDefault=innerWidth>1000&&innerHeight>650){area.insertAdjacentHTML('beforeend','<div class="fxo idock"><div class="itabs" role="tablist"></div><div class="fxo-b"></div></div>');
+/* Starts folded: an open card covered the bottom of the play area, right where sand settles, water pools and toys sink. */
+function fxOverlay(area,openByDefault=false){area.insertAdjacentHTML('beforeend','<div class="fxo idock"><div class="itabs" role="tablist"></div><div class="fxo-b"></div></div>');
   const el=area.querySelector('.fxo'),body=el.querySelector('.fxo-b');let last='';
   const d=infoDock(el,body,!openByDefault);
   return{set(html){if(html!==last){last=html;body.innerHTML=html}},el,dock:d}}
@@ -3667,7 +3669,7 @@ init(stage,g){
     for(const f of fmap.values()){paintAt(f.x,f.y);if(frame%6===0)elSound()}
     if(!paused){step();step()}else frame++;
     render()});
-  GAMES.sand._debug={get T(){return T},get found(){return found},scene,get cols(){return cols}};
+  GAMES.sand._debug={get T(){return T},get found(){return found},scene,get cols(){return cols},get rows(){return rows},get cs(){return cs},get paused(){return paused},get brush(){return brush},get frame(){return frame},DISC};
 }}});
 
 /* ============================================================
@@ -3803,12 +3805,13 @@ init(stage,g){
     const k=Math.min(W,H)/oR;for(const b of bodies){b.x=cx+(b.x-ox)*k;b.y=cy+(b.y-oy)*k;b.vx*=k;b.vy*=k;b.r*=S/oS;b.trail=b.trail.map(([x,y])=>[cx+(x-ox)*k,cy+(y-oy)*k])}}
   const ro=new ResizeObserver(resize);ro.observe(cv);g.onEnd(()=>ro.disconnect());
   solar();
-  GAMES.space._debug={get bodies(){return bodies}};
+  let simT=0;
+  GAMES.space._debug={get bodies(){return bodies},get simT(){return simT},gm,get cx(){return cx},get cy(){return cy},get hole(){return hole},get fast(){return fast},get names(){return names},get paths(){return paths},get pick(){return pick_},get focus(){return focus},sunR,get W(){return W},get H(){return H},get S(){return S}};
   kbPointer(g,cv);
   const PK=Object.keys(P);
   g.key(e=>{const k=e.key.toLowerCase();if(/^[0-9]$/.test(k)){const i=k==='0'?9:+k-1;if(PK[i]){pick_=PK[i];syncOpts();return true}}
     const a={s:'system',h:'hole',f:'fast',c:'clear',n:'names',p:'paths'}[k];if(a){stage.querySelector(`[data-a="${a}"]`).click();return true}return false});
-  g.loop(dt=>{frame++;if(frame%8===0)ovUpdate();const sub=fast?6:3,h=Math.min(dt,40)/1000/3;for(let i=0;i<sub;i++)step(h);
+  g.loop(dt=>{frame++;if(frame%8===0)ovUpdate();const sub=fast?6:3,h=Math.min(dt,40)/1000/3;for(let i=0;i<sub;i++){step(h);simT+=h}
     if(frame%2===0)for(const b of bodies){if(b.parent)continue;b.trail.push([b.x,b.y]);if(b.trail.length>90)b.trail.shift()}
     draw()});
 }}});
@@ -4079,7 +4082,7 @@ init(stage,g){
   g.key(e=>{if(/^[1-7]$/.test(e.key)){tool=TK[+e.key-1];syncTools();tone(520,.08,'triangle');return true}
     const sc={p:'pool',d:'dam',w:'falls',m:'mix',x:'empty'}[e.key.toLowerCase()];if(sc){scene(sc);return true}return false});
   g.loop(()=>{const t0=performance.now();update();draw();if(frame%12===0)ovUpdate();perf=lerp(perf,performance.now()-t0,.05);if(perf>30&&sim.cap>900&&frame>240&&frame%90===0){sim.cap=Math.max(900,Math.floor(sim.n*.9))}});
-  GAMES.splash._debug={sim,get perf(){return perf}};
+  GAMES.splash._debug={sim,get perf(){return perf},announced,scene,TOYS,get tool(){return tool},get springs(){return springs},get S(){return S},addToy};
 }}});
 
 /* ============================================================
@@ -4321,7 +4324,7 @@ init(stage,g){
   let last=performance.now();
   g.loop(()=>{frame++;const now=performance.now(),dt=Math.min(.05,(now-last)/1000);last=now;t+=dt;ctx.setTransform(dims.d,0,0,dims.d,0,0);
     if(mode==='pend')drawPend(dt);if(mode==='ripple')drawRipple();if(mode==='string')drawString()});
-  GAMES.waves._debug={PD,RP,ST,setMode(m){stage.querySelector(`[data-wm="${m}"]`).click()}};
+  GAMES.waves._debug={PD,RP,ST,setMode(m){stage.querySelector(`[data-wm="${m}"]`).click()},get t(){return t},get mode(){return mode},get dims(){return dims}};
 }}});
 
 /* ---------- router ---------- */
