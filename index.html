@@ -4181,9 +4181,9 @@ function open(k){
     onEnd(fn){ends.push(fn)},stop(){this.alive=false;this.clear();cancelAnimationFrame(rafId);ends.forEach(f=>{try{f()}catch(e){}});try{speechSynthesis.cancel()}catch(e){}}};
   tone(520,.12,'triangle');tone(780,.15,'triangle',.2,.08);
   try{history.replaceState(null,'','#'+k)}catch(e){}
-  requestAnimationFrame(()=>{G.init(stage,cur);stage.querySelectorAll('.dock .drow.els').forEach(compactBar);try{stage.setAttribute('tabindex','-1');stage.focus({preventScroll:true})}catch(e){}});
+  requestAnimationFrame(()=>{G.init(stage,cur);stage.querySelectorAll('.dock .drow.els').forEach(compactBar);try{stage.setAttribute('tabindex','-1');stage.focus({preventScroll:true})}catch(e){}if(window.WiggleBox)WiggleBox.ready=k});
 }
-function home(){closePop();if(cur){cur.stop();cur=null}$('#stage').innerHTML='';$('#game').hidden=true;$('#home').hidden=false;$('#home').scrollTop=homeScroll;tone(400,.12,'triangle');
+function home(){closePop();if(window.WiggleBox)WiggleBox.ready=null;if(cur){cur.stop();cur=null}$('#stage').innerHTML='';$('#game').hidden=true;$('#home').hidden=false;$('#home').scrollTop=homeScroll;tone(400,.12,'triangle');
   const t=lastTile&&document.querySelector(`.tile[data-g="${lastTile}"]`);if(t)try{t.focus({preventScroll:true})}catch(e){}
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
 $('#sections').addEventListener('click',e=>{const t=e.target.closest('.tile');if(t)open(t.dataset.g)});
@@ -4204,6 +4204,8 @@ addEventListener('keydown',e=>{
       const ok={ArrowLeft:dx<-5&&Math.abs(dy)<r.height*.6,ArrowRight:dx>5&&Math.abs(dy)<r.height*.6,ArrowUp:dy<-5,ArrowDown:dy>5}[e.key];if(!ok)continue;const d=Math.abs(dx)+Math.abs(dy)*1.5;if(d<bd){bd=d;best=t}}
     if(best){best.focus();best.scrollIntoView({block:'nearest',behavior:'smooth'});e.preventDefault()}}
 });
+/* read-only handle for the automated test suite: lets tests read game state; nothing here changes gameplay */
+window.WiggleBox={games:GAMES,ready:null,get current(){return cur}};
 const start=location.hash.slice(1);if(GAMES[start])open(start);
 addEventListener("hashchange",()=>{const k=location.hash.slice(1);if(GAMES[k]){if(cur)home();open(k)}else if(cur)home()});
 
