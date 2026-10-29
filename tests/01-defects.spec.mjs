@@ -150,9 +150,11 @@ test.describe('math art', () => {
     await page.locator('[data-am="tree"]').click();
     await dbg(page, 'art', d => { d.S.tree.depth = 5; d.setMode('tree'); return 1; });
     const drawn = await page.evaluate(() => new Promise(res => {
-      const P = CanvasRenderingContext2D.prototype, orig = P.arc; let n = 0;
+      // leaves are the 2.5px dots; each drawn frame starts with one full-canvas fillRect at (0,0)
+      const P = CanvasRenderingContext2D.prototype, orig = P.arc, ofr = P.fillRect; let n = 0, frames = 0;
       P.arc = function (x, y, r, ...rest) { if (r === 2.5) n++; return orig.call(this, x, y, r, ...rest); };
-      requestAnimationFrame(() => { n = 0; requestAnimationFrame(() => { const v = n; P.arc = orig; res(v); }); });
+      P.fillRect = function (x, y, ...rest) { if (x === 0 && y === 0) frames++; return ofr.call(this, x, y, ...rest); };
+      setTimeout(() => { P.arc = orig; P.fillRect = ofr; res(n / frames); }, 300);
     }));
     const shown = await page.locator('#pn .fx').first().locator('.num').innerText();
     expect(Number(shown)).toBe(drawn);
