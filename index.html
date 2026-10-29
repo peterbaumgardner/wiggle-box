@@ -458,6 +458,47 @@ img,canvas{-webkit-user-drag:none}
 }
 .lab-top>.pbar{flex:0 1 auto!important;min-width:0;display:flex;flex-wrap:wrap;gap:8px}
 .popitem small{display:block;font-size:11px;opacity:.6;font-weight:800}
+.cgh{display:none!important}
+.cgbtn{white-space:nowrap}
+/* Puzzle Box: everything sizes to the space it actually has */
+.pzl{container-type:size;overflow:hidden;gap:clamp(8px,2.5cqh,18px);padding:clamp(8px,2cqh,16px)}
+.hanoi{--n:3;container-type:size;height:min(100%,440px);flex:1 1 auto;min-height:0}
+.disk{height:clamp(14px,calc((100cqh - 40px)/(var(--n) + 1.6) - 4px),36px);font-size:clamp(11px,calc((100cqh - 40px)/(var(--n) + 1.6)*.45),15px);border-width:clamp(2px,.6cqh,3px)}
+.disk.lift{transform:translateY(calc(-1 * clamp(14px,calc((100cqh - 40px)/(var(--n) + 1.6)),36px)))}
+.sgrid{flex:none;width:min(94cqw,calc(100cqh - 150px),440px)}
+.sgrid .sc{aspect-ratio:1;min-height:0;height:auto}
+.lgrid{flex:none;width:min(94cqw,calc(100cqh - 30px),460px)}
+.lab-top{flex-wrap:wrap}
+.cgbtn.more{min-width:52px;font-size:20px;letter-spacing:1px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cgend{display:none}
+/* phones: the big picture tools shrink so a whole dock fits in about two short rows */
+@media (max-width:600px){
+  .dock{padding:6px 6px 8px;gap:6px}
+  .dock .drow{gap:5px;justify-content:center}
+  .dock .tool{min-width:0;width:calc((100% - 6*5px)/7);padding:3px 2px 4px;border-width:2.5px;border-radius:14px;font-size:10.5px;letter-spacing:-.2px}
+  .dock .tool .ti{font-size:21px}
+  .dock .tool .caret{display:none}
+  .dock .sep{display:none}
+  .dock .otext{display:none}
+  .cdot{width:34px!important;height:34px!important}
+}
+@media (max-width:380px){.dock .tool{font-size:9.5px}.dock .tool .ti{font-size:19px}}
+.odot{display:inline-block;flex:none;vertical-align:middle}
+.cgbtn{display:inline-flex;align-items:center;gap:6px}
+.popitem .odot{width:34px;height:34px}
+.bins{--u:4;display:flex;justify-content:center;gap:clamp(4px,1.5cqw,12px);width:100%}
+.bit{width:min(92px,calc((96cqw - (var(--u) - 1)*clamp(4px,1.5cqw,12px))/var(--u)))!important;min-width:0}
+.bit .bb{font-size:clamp(20px,min(4vw,7cqw),44px);border-width:clamp(2px,.8cqw,4px)}
+.bit .bv{font-size:clamp(11px,3.2cqw,19px)}
+.sieve{width:min(100%,640px,88cqh)}
+.pot{font-size:clamp(12px,min(2vw,3.4cqh),20px)}
+.pot::before{top:auto;bottom:-.55em;right:-.45em;font-size:.62em;line-height:1;z-index:1}
+/* Paint: the palette wraps onto a second row instead of hiding off the side */
+.tools{flex-wrap:wrap;justify-content:center;overflow:visible;row-gap:8px}
+@media (max-width:600px){.tools{gap:6px;padding:8px 6px}.tools .sw{width:40px;height:40px;border-width:3px}.tools .tb{height:44px;min-width:44px;font-size:22px;padding:0 6px}.tools .sep{display:none}}
+.popgrid{min-width:min(480px,calc(100vw - 84px));grid-template-columns:repeat(auto-fill,minmax(min(96px,calc((100vw - 110px)/3)),1fr))}
+.pop{box-sizing:border-box}.popgrid{min-width:min(480px,calc(100vw - 96px))}
 </style>
 
 <div id="home" class="view">
@@ -641,7 +682,38 @@ function labShell(stage,{top='',panel='',label='Play area'}={}){
   const hintEl=stage.querySelector('.simhint');
   const hint=makeHint(hintEl);
   infoDock(stage.querySelector('.idock'),stage.querySelector('.lab-panel'),innerHeight<560);
+  const topEl=stage.querySelector('.lab-top');if(topEl)compactBar(topEl);
   return{cv:stage.querySelector('.simcv'),panel:stage.querySelector('.lab-panel'),top:stage.querySelector('.lab-top'),area:stage.querySelector('.simarea'),hint};
+}
+/* Toolbars always fit on one row. If a bar would wrap, it first folds each group of choices (modes, sizes, tools) into one
+   "current choice ▾" menu button, smallest screens first. If it still doesn't fit, the less important buttons move into a "⋯" menu.
+   The original buttons stay in the page, hidden, and get clicked for real, so every game's own code keeps working. */
+function compactBar(bar){let busy=false;
+  const key=b=>{for(const a of b.attributes)if(a.name.startsWith('data-')&&a.name!=='data-cg')return a.name;return null};
+  const shown=x=>!x.classList.contains('cgh')&&!x.hidden&&x.style.display!=='none'&&getComputedStyle(x).display!=='none';
+  const wraps=()=>{const kids=[...bar.querySelectorAll(':scope>*, :scope>.pbar>*')].filter(x=>!x.classList.contains('pbar')&&shown(x)&&x.offsetHeight);if(!kids.length)return false;
+    const t0=Math.min(...kids.map(k=>k.getBoundingClientRect().top));return kids.some(k=>k.getBoundingClientRect().top>t0+12)};
+  function menuBtn(before,html,items,cls=''){const m=document.createElement('button');m.className='pbtn small cgbtn '+cls;m.type='button';m.setAttribute('aria-haspopup','menu');m.innerHTML=html;before.before(m);
+    m.addEventListener('click',()=>popMenu(m,`<div class="popgrid">${items.map((x,i)=>`<button class="popitem ${x.classList.contains('on')?'on':''}" data-cg="${i}">${x.innerHTML}</button>`).join('')}</div>`,it=>items[+it.dataset.cg].click()));return m}
+  function refresh(){if(busy||!bar.isConnected)return;busy=true;mo.disconnect();
+    bar.querySelectorAll('.cgbtn').forEach(x=>x.remove());bar.querySelectorAll('.cgh').forEach(x=>x.classList.remove('cgh'));
+    if(wraps()){
+      // 1) fold choice groups, biggest first
+      const groups=[],seen=new Set();
+      for(const b of bar.querySelectorAll('button')){const k=key(b);if(!k||seen.has(b)||!shown(b))continue;const grp=[...b.parentElement.children].filter(x=>x.tagName==='BUTTON'&&key(x)===k&&shown(x));grp.forEach(x=>seen.add(x));
+        if(grp.length>=2&&grp.some(x=>x.classList.contains('on')))groups.push(grp)}
+      groups.sort((a,b)=>b.length-a.length);
+      for(const grp of groups){if(!wraps())break;const cur=grp.find(x=>x.classList.contains('on'));menuBtn(grp[0],`${cur.innerHTML}<span class="caret">▾</span>`,grp);grp.forEach(x=>x.classList.add('cgh'))}
+      // 2) still too wide: tuck the less important buttons into a ⋯ menu, from the end
+      if(wraps()){const cand=[...bar.querySelectorAll('button')].filter(x=>shown(x)&&!x.classList.contains('cgbtn')&&!x.classList.contains('go')&&!x.closest('.cgh')).reverse();
+        const moved=[],end=document.createElement('i');end.className='cgbtn cgend';bar.appendChild(end);let more=null;
+        for(const x of cand){if(!wraps())break;x.classList.add('cgh');moved.unshift(x);if(more)more.remove();more=menuBtn(end,'⋯<span class="sr"> More</span>',moved,'more')}}
+    }
+    mo.takeRecords();mo.observe(bar,OPT);busy=false}
+  const OPT={childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','style']};
+  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
+  refresh();let rt=0;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(refresh,80)});
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refresh);
 }
 /* Info tabs: every .fx card in a panel becomes a tab, and only one card shows at a time, so nothing ever scrolls.
    Tap a tab to read it, tap the open tab again to fold the bar away. Cards keep updating live behind the scenes.
@@ -2993,8 +3065,8 @@ init(stage,g){
       <div class="frow"><span class="note">${b} splits evenly by:</span>${Fb.map(d=>`<span class="pb sm ${Fa.includes(d)?'both':''}">${d}</span>`).join('')}</div>
       <div class="frow"><span class="note">Counting by ${a}:</span>${[1,2,3,4,5,6].map(k=>`<span class="pb sm ${(k*a)%b===0?'both':''}">${k*a}</span>`).join('')}</div>
       <div class="frow"><span class="note">Counting by ${b}:</span>${[1,2,3,4,5,6].map(k=>`<span class="pb sm ${(k*b)%a===0?'both':''}">${k*b}</span>`).join('')}</div>`;
-    panel.querySelector('#pn').innerHTML=`<div class="fx big hot"><span class="tag">Biggest shared factor (GCD)</span><div class="row">${common.length?common.join(' × ')+' = ':''}<span class="num">${gcdv}</span></div></div>
-      <div class="fx big"><span class="tag">Smallest shared multiple (LCM)</span><div class="row"><span class="num">${lcmv}</span></div><div class="row note">all the primes in both circles multiplied</div></div>
+    panel.querySelector('#pn').innerHTML=`<div class="fx big hot"><span class="tag">Biggest shared (GCD)</span><div class="row">${common.length?common.join(' × ')+' = ':''}<span class="num">${gcdv}</span></div></div>
+      <div class="fx big"><span class="tag">Smallest shared (LCM)</span><div class="row"><span class="num">${lcmv}</span></div><div class="row note">all the primes in both circles multiplied</div></div>
       <div class="fx"><span class="tag">Neat fact</span><div class="row">GCD × LCM = ${a} × ${b}</div><div class="row"><span class="num">${gcdv} × ${lcmv} = ${a*b}</span></div></div>`}
   function setMode(m){mode=m;done=false;if(m==='sieve'){dead.clear();crowned.clear();sieveHTML();ui.hint('Tap 2 to wilt all the numbers you get counting by 2!',4500)}
     if(m==='tree'){newTree();ui.hint('Tap the top number to split it!',3500)}if(m==='venn'){vennHTML()}}
@@ -3023,7 +3095,7 @@ init(stage,g){
   function hanoiNew(n=H.n){H.n=n;H.pegs=[[...Array(n)].map((_,i)=>n-i),[],[]];H.held=null;H.moves=0;H.done=false;hanoi()}
   function hanoi(){const min=2**H.n-1;
     ex.innerHTML=[3,4,5,6,7].map(n=>`<button class="opt ${n===H.n?'on':''}" data-hn="${n}">${n} disks</button>`).join('');
-    pz.innerHTML=`<div class="hanoi">${H.pegs.map((p,i)=>`<button class="peg ${H.held&&H.held.from===i?'from':''}" data-peg="${i}"><span class="pole"></span>${p.map((d,k)=>`<span class="disk ${H.held&&H.held.from===i&&k===p.length-1?'lift':''}" style="--w:${30+d*(60/H.n)}%;--c:${COL[d-1]}">${d}</span>`).join('')}</button>`).join('')}</div>`;
+    pz.innerHTML=`<div class="hanoi" style="--n:${H.n}">${H.pegs.map((p,i)=>`<button class="peg ${H.held&&H.held.from===i?'from':''}" data-peg="${i}"><span class="pole"></span>${p.map((d,k)=>`<span class="disk ${H.held&&H.held.from===i&&k===p.length-1?'lift':''}" style="--w:${30+d*(60/H.n)}%;--c:${COL[d-1]}">${d}</span>`).join('')}</button>`).join('')}</div>`;
     patchPanel(pn,`<div class="fx big hot"><span class="tag">Moves</span><div class="row"><span class="num">${H.moves}</span> &nbsp;<span class="note">fewest possible: ${min}</span></div></div>
       <div class="fx"><span class="tag">Fewest moves</span><div class="row">2<sup>${V('n','#9A5BFF')}</sup> − 1 = 2<sup>${H.n}</sup> − 1 = <span class="num">${min}</span></div><div class="row note">${[1,2,3,4,5,6,7].map(n=>`${n} → ${2**n-1}`).join(' · ')}</div></div>
       <div class="fx"><span class="tag">Rules</span><div class="row">Move the whole tower to the right peg. Never put a big disk on a small one.</div></div>
@@ -3043,9 +3115,9 @@ init(stage,g){
   const BI={bits:Array(8).fill(0),target:0,lvl:0,done:false};
   function binNew(){const mx=BI.lvl<3?15:BI.lvl<6?63:255;BI.target=rint(1,mx);BI.bits.fill(0);BI.done=false;binary()}
   function binary(){const v=BI.bits.reduce((s,b,i)=>s+(b<<(7-i)),0),used=BI.lvl<3?4:BI.lvl<6?6:8;ex.innerHTML=`<button class="pbtn small" id="bnew">🎲 New number</button>`;
-    pz.innerHTML=`<div class="bintarget">Make <b>${BI.target}</b></div><div class="bins">${BI.bits.map((b,i)=>{const w=2**(7-i);return i<8-used?'':`<button class="bit ${b?'on':''}" data-bit="${i}"><span class="bv">${w}</span><span class="bb">${b}</span></button>`}).join('')}</div>
+    pz.innerHTML=`<div class="bintarget">Make <b>${BI.target}</b></div><div class="bins" style="--u:${used}">${BI.bits.map((b,i)=>{const w=2**(7-i);return i<8-used?'':`<button class="bit ${b?'on':''}" data-bit="${i}"><span class="bv">${w}</span><span class="bb">${b}</span></button>`}).join('')}</div>
       <div class="bintarget sm">${v===BI.target?'✅ ':''}Now: <b>${v}</b></div>`;
-    patchPanel(pn,`<div class="fx big hot"><span class="tag">In binary</span><div class="row"><span class="num">${BI.bits.slice(8-used).join('')}</span><sub>2</sub> = <span class="num">${v}</span><sub>10</sub></div></div>
+    patchPanel(pn,`<div class="fx big hot"><span class="tag">In binary</span><div class="row"><span class="num">${BI.bits.slice(8-used).join('')}</span><sub>2</sub> = <span class="num">${v}</span><sub>10</sub></div><div class="row note">Read it like any number: the biggest place is on the left.</div></div>
       <div class="fx"><span class="tag">Add up the lit bulbs</span><div class="row">${BI.bits.map((b,i)=>b?2**(7-i):null).filter(Boolean).join(' + ')||'0'} = <span class="num">${v}</span></div></div>
       <div class="fx"><span class="tag">Each bulb is double</span><div class="row">2<sup>0</sup>=1, 2<sup>1</sup>=2, 2<sup>2</sup>=4 … 2<sup>7</sup>=128</div><div class="row note">Computers store every number, picture and song with only 0s and 1s.</div></div>
       <div class="fx"><span class="tag">Biggest number</span><div class="row">${used} bulbs: 2<sup>${used}</sup> − 1 = <span class="num">${2**used-1}</span></div></div>`);
@@ -3082,7 +3154,7 @@ init(stage,g){
     const sv=t.closest('[data-sv]');if(sv&&SU.sel&&!SU.done){const[r,c]=SU.sel,v=+sv.dataset.sv;SU.grid[r][c]=v;tone(v?400+v*60:250,.08,'triangle');sudoku()}});
   ex.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;tone(560,.07,'triangle');
     if(t.dataset.hn)hanoiNew(+t.dataset.hn);if(t.dataset.ln)lightsNew(+t.dataset.ln);if(t.id==='bnew')binNew();if(t.dataset.sn)suNew(+t.dataset.sn)});
-  bindChips(ui.top,'pz',m=>{mode=m;({hanoi:()=>hanoiNew(),lights:()=>lightsNew(),binary:binNew,sudoku:()=>suNew()})[m]()});
+  bindChips(ui.top,'pz',m=>{mode=m;({hanoi:()=>hanoiNew(),lights:()=>lightsNew(),binary:binNew,sudoku:()=>suNew()})[m]();ui.hint({hanoi:'Move the tower to the right peg, one disk at a time!',lights:'Tap a light. It flips itself and its neighbors. Turn them all off!',binary:'Tap the bulbs to turn them on. Add up the lit numbers to make the target!',sudoku:'Each row, column and box needs every number once. Tap a square, then a number.'}[m],4500,true)});
   hanoiNew(3);ui.hint('Move the tower to the right peg, one disk at a time!',4500);
   function gridNav(sel,n,k){const cells=[...pz.querySelectorAll(sel)],i=Math.max(0,cells.indexOf(document.activeElement)),r=(i/n)|0,c=i%n;
     const d={ArrowLeft:[0,-1],ArrowRight:[0,1],ArrowUp:[-1,0],ArrowDown:[1,0]}[k];if(!d)return false;const nr=clamp(r+d[0],0,n-1),nc=clamp(c+d[1],0,n-1);cells[nr*n+nc]?.focus();return true}
@@ -3989,7 +4061,7 @@ init(stage,g){
   function info(){const pn=panel.querySelector('#pn');
     if(mode==='pend'){const T=2*Math.PI*Math.sqrt(PD.L/PD.g),meas=PD.swings>1?(t-PD.t0)/((PD.swings-1)/2):0;
       patchPanel(pn,`
-        <div class="fx big hot"><span class="tag">Time for one swing back and forth</span><div class="row">${V('T',GRN)} = 2${V('π','#1D1842')}√${frac(V('L',BLUE),V('g',PUR))} = <span class="num" style="color:${GRN}">${fmt(T,2)}</span> s</div><div class="row note">Exact for small swings. Big swings take a little longer.</div></div>
+        <div class="fx big hot"><span class="tag">One swing (period)</span><div class="row">${V('T',GRN)} = 2${V('π','#1D1842')}√${frac(V('L',BLUE),V('g',PUR))} = <span class="num" style="color:${GRN}">${fmt(T,2)}</span> s</div><div class="row note">Exact for small swings. Big swings take a little longer.</div></div>
         <div class="fx"><span class="tag">Stopwatch says</span><div class="row"><span class="num">${meas?fmt(meas,2):'…'}</span> s per swing <span class="note">(${Math.floor(PD.swings/2)} swings)</span></div></div>
         <div class="fx"><span class="tag">Surprise!</span><div class="row">The starting angle ${V('θ',RED)} is not in the formula.</div><div class="row note">Big swing or small swing, it takes about the same time. Galileo noticed this in 1602.</div></div>
         <div class="fx"><span class="tag">Swings per second</span><div class="row">${V('f',ORG)} = ${frac(1,V('T',GRN))} = <span class="num">${fmt(1/T,2)}</span> Hz</div></div>`)}
@@ -4109,7 +4181,7 @@ function open(k){
     onEnd(fn){ends.push(fn)},stop(){this.alive=false;this.clear();cancelAnimationFrame(rafId);ends.forEach(f=>{try{f()}catch(e){}});try{speechSynthesis.cancel()}catch(e){}}};
   tone(520,.12,'triangle');tone(780,.15,'triangle',.2,.08);
   try{history.replaceState(null,'','#'+k)}catch(e){}
-  requestAnimationFrame(()=>{G.init(stage,cur);try{stage.setAttribute('tabindex','-1');stage.focus({preventScroll:true})}catch(e){}});
+  requestAnimationFrame(()=>{G.init(stage,cur);stage.querySelectorAll('.dock .drow.els').forEach(compactBar);try{stage.setAttribute('tabindex','-1');stage.focus({preventScroll:true})}catch(e){}});
 }
 function home(){closePop();if(cur){cur.stop();cur=null}$('#stage').innerHTML='';$('#game').hidden=true;$('#home').hidden=false;$('#home').scrollTop=homeScroll;tone(400,.12,'triangle');
   const t=lastTile&&document.querySelector(`.tile[data-g="${lastTile}"]`);if(t)try{t.focus({preventScroll:true})}catch(e){}
