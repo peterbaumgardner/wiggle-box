@@ -3,7 +3,7 @@
    - The page itself is network-first, so a connected device always gets the newest version; offline it gets the stored copy.
    - Everything else is cache-first. A new version replaces the old cache in one step, so files from two versions never mix.
    The version below is the content hash of the app files; `npm run stamp` updates it, and a test fails if it is stale. */
-const VERSION='ae3d8c598774';
+const VERSION='2a0ccec6b8de';
 const CACHE='wigglebox-'+VERSION;
 const SHELL=['./','index.html','css/app.css','js/core.js','js/data.js','games/art.js','games/atoms-sci.js','games/atoms.js','games/balance.js','games/bridge.js','games/bubbles.js','games/cannon.js','games/chance.js','games/circuit.js','games/feed.js','games/fireworks.js','games/forge.js','games/geo.js','games/graph.js','games/laser.js','games/music.js','games/paint.js','games/physics.js','games/potion.js','games/primes.js','games/puzzles.js','games/robo.js','games/sand.js','games/shapes.js','games/space.js','games/splash.js','games/trace.js','games/waves.js','games/words.js','js/app.js','matter.min.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});

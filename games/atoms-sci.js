@@ -218,7 +218,8 @@ function shapeConstraints(atoms,bonds){
 /* One round of shape relaxation (position-based): pts = [{x,y,z,fixed}], scale = screen units per pm. */
 function relax(pts,cons,scale,iters=4){
   const fix=p=>p.fixed;
-  const pull=(a,b,d,k)=>{const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,l=Math.hypot(dx,dy,dz)||1e-6,wa=fix(a)?0:1,wb=fix(b)?0:1;if(!wa&&!wb)return;
+  /* an atom held by a finger pulls its neighbours along but never shoves them away, so the atom you are aiming at stays put */
+  const pull=(a,b,d,k)=>{const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,l=Math.hypot(dx,dy,dz)||1e-6,wa=fix(a)?0:1,wb=fix(b)?0:1;if(!wa&&!wb)return;if((!wa||!wb)&&l<d)return;
     const s=(l-d)/l*k/(wa+wb);a.x+=dx*s*wa;a.y+=dy*s*wa;a.z+=dz*s*wa;b.x-=dx*s*wb;b.y-=dy*s*wb;b.z-=dz*s*wb};
   for(let it=0;it<iters;it++){
     for(const c of cons.dist)pull(pts[c.i],pts[c.j],c.d*scale,c.k*.8);
