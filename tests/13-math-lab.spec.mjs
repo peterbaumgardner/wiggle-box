@@ -149,6 +149,8 @@ async function dragCorner(page, i, to) {
   const from = await dbg(page, 'geo', (d, G, W, i) => d.toPx(...d.poly[i]), i);
   const dest = await dbg(page, 'geo', (d, G, W, to) => d.toPx(...to), to);
   await mouseDrag(page, [[box.x + from[0], box.y + from[1]], [box.x + dest[0], box.y + dest[1]]], { steps: 12 });
+  let last = null;   // the view may re-fit after the finger lifts; let it settle before the next drag
+  for (let k = 0; k < 40; k++) { const v = JSON.stringify(await dbg(page, 'geo', d => d.toPx(1, 1))); if (v === last) break; last = v; await page.waitForTimeout(40); }
 }
 async function setPoly(page, pts) {
   const n = await dbg(page, 'geo', d => d.poly.length);
@@ -167,7 +169,7 @@ test.describe('16 Shape Lab', () => {
     ['Scalene triangle', [[-3, -2], [2, -1], [0, 3]]], ['Pentagon', [[-2, -2], [2, -2], [3, 1], [0, 3], [-3, 1]]], ['Hexagon', [[-2, -2], [2, -2], [3, 0], [2, 2], [-2, 2], [-3, 0]]],
   ];
   test('dragging corners: names, area, perimeter and the angle sum match independent geometry', async ({ page }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(480_000);
     await home(page); await openGame(page, 'geo');
     for (const [name, pts] of SHAPES) {
       await setPoly(page, pts);
