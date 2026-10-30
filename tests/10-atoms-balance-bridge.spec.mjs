@@ -137,6 +137,8 @@ test.describe('01 Atom Builder', () => {
 /* ---------------- Balance Scale ---------------- */
 async function tapItem(page, side, kind) {
   const box = await canvasBox(page);
+  // the pans are laid out again on the next frame after a tap; wait for the drawn items to catch up with the count
+  await waitDbg(page, 'balance', (d, G, W, [s, k]) => d.items.filter(i => i.side === s && i.kind === k).length === d[s][k], { arg: [side, kind], timeout: 10_000 });
   const it = await dbg(page, 'balance', (d, G, W, [s, k]) => { const o = d.items.filter(i => i.side === s && i.kind === k).pop(); return o && [o.x, o.y]; }, [side, kind]);
   expect(it, `a ${kind} on side ${side}`).toBeTruthy();
   await page.mouse.click(box.x + it[0], box.y + it[1]);
