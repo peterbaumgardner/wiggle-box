@@ -5,6 +5,7 @@
 //   phone-landscape  844x390  touch
 //   tablet-portrait  768x1024 touch
 //   tablet-landscape 1024x768 touch
+//   perf             1440x900 mouse      - frame-rate, memory and stress tests, after everything else, one at a time
 import { defineConfig } from '@playwright/test';
 
 const PORT = Number(process.env.WB_PORT || 4173);
@@ -33,10 +34,12 @@ export default defineConfig({
     timeout: 20_000,
   },
   projects: [
-    { name: 'desktop', use: { viewport: { width: 1440, height: 900 } }, grepInvert: /@layout/ },
+    { name: 'desktop', use: { viewport: { width: 1440, height: 900 } }, grepInvert: /@layout/, testIgnore: /18-performance/ },
     { name: 'phone-portrait', use: touch(390, 844), grep: /@layout/ },
     { name: 'phone-landscape', use: touch(844, 390), grep: /@layout/ },
     { name: 'tablet-portrait', use: touch(768, 1024), grep: /@layout/ },
     { name: 'tablet-landscape', use: touch(1024, 768), grep: /@layout/ },
+    // timing-sensitive checks run last, on their own, so other tests don't steal the CPU while they measure
+    { name: 'perf', use: { viewport: { width: 1440, height: 900 } }, testMatch: /18-performance/, dependencies: ['desktop', 'phone-portrait', 'phone-landscape', 'tablet-portrait', 'tablet-landscape'] },
   ],
 });

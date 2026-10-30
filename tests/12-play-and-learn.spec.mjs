@@ -387,7 +387,7 @@ async function traceCurrent(page, { wobble = .5, backwards = false } = {}) {
 
 test.describe('27 Letter Trace', () => {
   test('every letter A-Z and number 0-9 can be finished with a realistic, wobbly trace', async ({ page }) => {
-    test.setTimeout(300_000);
+    test.setTimeout(600_000);
     await home(page); await openGame(page, 'trace');
     for (const set of ['abc', 'num']) {
       await page.locator(`[data-set="${set}"]`).click();

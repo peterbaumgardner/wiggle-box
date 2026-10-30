@@ -212,6 +212,9 @@ test.describe('16 Shape Lab', () => {
       const to = which === 'a' ? [o[0] + val, o[1]] : [o[0], o[1] + val];
       const f = await dbg(page, 'geo', (d, G, W, p) => d.toPx(...p), from), t = await dbg(page, 'geo', (d, G, W, p) => d.toPx(...p), to);
       await mouseDrag(page, [[box.x + f[0], box.y + f[1]], [box.x + t[0], box.y + t[1]]], { steps: 12 });
+      // the view re-fits once the finger lifts; wait until it has settled before aiming the next drag
+      let last = null;
+      for (let k = 0; k < 40; k++) { const v = JSON.stringify(await dbg(page, 'geo', d => d.toPx(1, 1))); if (v === last) break; last = v; await page.waitForTimeout(50); }
     };
     await drag('a', 5); await drag('b', 6);                    // move away from the starting 3-4 triangle first
     await expect(page.locator('#trip')).toContainText('found: 0');

@@ -303,8 +303,8 @@ test.describe('20 Physics Lab', () => {
     await mouseDrag(page, [P(c0[0], c0[1]), P(.6, .5), P(.8, .4)], { steps: 10, delay: 30 });
     const c1 = await Pdbg(page, d => { const c = d.world.bodies.find(x => x.plugin.wb && x.plugin.wb.kind === 'crate'); return [c.position.x / d.W, c.position.y / d.H]; });
     expect(c1[0]).toBeGreaterThan(c0[0] + .15);
-    await page.waitForTimeout(1500);
-    // pin it in the air: pin then it stays put
+    await waitDbg(page, 'physics', d => { const c = d.world.bodies.find(x => x.plugin.wb && x.plugin.wb.kind === 'crate'); return Math.hypot(c.velocity.x, c.velocity.y) < .05 && Math.abs(c.angularVelocity) < .01; }, { timeout: 15_000 });
+    // pin it: tap the crate with the pin tool
     const c2 = await Pdbg(page, d => { const c = d.world.bodies.find(x => x.plugin.wb && x.plugin.wb.kind === 'crate'); return [c.position.x / d.W, c.position.y / d.H]; });
     await page.locator('.tool[data-t="pin"]').click();
     await page.mouse.click(...P(c2[0], c2[1]));

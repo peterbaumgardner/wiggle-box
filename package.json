@@ -8,7 +8,8 @@
     "test": "playwright test",
     "test:fast": "playwright test --project=desktop",
     "stamp": "node tools/stamp-sw.mjs",
-    "stamp:check": "node tools/stamp-sw.mjs --check"
+    "stamp:check": "node tools/stamp-sw.mjs --check",
+    "test:perf": "playwright test --project=perf --no-deps"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

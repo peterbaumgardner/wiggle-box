@@ -1,6 +1,8 @@
 // Frame-rate independence, memory over many visits, frame cost per game, and long stress runs.
 import { test, expect, GAME_KEYS, home, openGame, dbg } from './helpers.mjs';
 
+test.describe.configure({ mode: 'serial' });   // one at a time: these measure speed
+
 /* Pretend the screen refreshes at `hz`: requestAnimationFrame fires on a timer instead of the real display. */
 const fakeDisplay = hz => `(() => { const iv = 1000 / ${hz}; let next = performance.now();
   window.requestAnimationFrame = cb => { next = Math.max(next + iv, performance.now()); return setTimeout(() => cb(performance.now()), Math.max(0, next - performance.now())); };
