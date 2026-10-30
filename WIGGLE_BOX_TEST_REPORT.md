@@ -144,6 +144,28 @@ Tested with the real service worker in Chromium (`tests/17-offline.spec.mjs`):
   really retries.
 - The test `the service worker version matches the app files` fails if anyone changes the app without running `npm run stamp`.
 
+## After splitting into one file per game (2026-10-30)
+
+The code was split into `css/app.css`, `js/core.js`, `js/data.js`, `games/<game>.js` (28 files) and `js/app.js`, with no
+change to how any game behaves, plus one Bridge Builder fix (the truck now follows the road it is on; new test added).
+A line-by-line check confirmed every line of the old script and stylesheet is in exactly one new file.
+
+The machine was noticeably slower for these runs than for the release run (a full run took 54–60 minutes instead of 41).
+
+| Run | Passed | Failed | Notes |
+|---|---|---|---|
+| Full run 1 | 330 | 4 | Physics tools, two Element Box tests, Splash sinkers: all ran out of time or raced under load. All 4 passed when run alone. |
+| Full run 2 | 328 | 6 | Atom Builder molecules, Firework Sky, Letter Trace, two Element Box tests, Splash sinkers. All but the molecule test passed when run alone. |
+| Timing tests | 4 | 1 | Splash Lab's median frame was 50 ms (20 fps) against a 40 ms limit on this slower machine (it was 33 ms before). Not caused by the split: Splash Lab's code is unchanged. The stress test didn't run after it. |
+
+**Atom Builder molecule test:** it's flaky, and it was flaky before the split too. Run 4 times on each version with nothing
+else running: the old single-file version passed 2 of 4, the new split version passed 2 of 4. It fails when a fast
+test drag misses an atom that is still drifting, so a bond doesn't form. The game itself works, but bonding by dragging
+could be made more forgiving.
+
+The game matrix (`WIGGLE_BOX_GAME_MATRIX.md`) is now generated from full run 2 plus the reruns, so it shows Atom Builder
+as FAIL, which is the honest result for that test.
+
 ## Known limits
 
 - **Headless Chromium only.** No Safari/WebKit or Firefox runs, and no real phone or tablet. Touch is real CDP touch
