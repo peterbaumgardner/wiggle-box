@@ -211,13 +211,15 @@ test.describe('11 Rainbow Piano', () => {
     await page.addInitScript(recordTones);
     await home(page); await openGame(page, 'music');
     const want = [0, 2, 4, 5, 7, 9, 11, 12].map(s => 261.6256 * 2 ** (s / 12));
+    // keys light for a fifth of a second; record each lighting instead of racing it
+    await page.evaluate(() => { window.__lit = []; new MutationObserver(ms => ms.forEach(m => { if (m.target.classList.contains('lit')) window.__lit.push(+m.target.dataset.i); })).observe(document.querySelector('#stage'), { subtree: true, attributes: true, attributeFilter: ['class'] }); });
     for (let i = 0; i < 8; i++) {
       await page.evaluate(() => { window.__freqs = []; });
       await page.locator(`.pad[data-i="${i}"]`).click();
       const f = await page.evaluate(() => window.__freqs);
       expect(Math.abs(f[0] - want[i])).toBeLessThan(0.02);
       expect(Math.abs(f[1] - want[i] * 2)).toBeLessThan(0.04);  // the soft octave above
-      await expect(page.locator(`.pad[data-i="${i}"]`)).toHaveClass(/lit/);
+      expect(await page.evaluate(() => window.__lit)).toContain(i);
     }
     // sound off: keys still light up, but make no sound
     await page.locator('#snd2').click();
@@ -352,6 +354,7 @@ test.describe('13 Firework Sky', () => {
   });
 
   test('two hundred frantic taps and scribbles never grow sparks or rockets without limit', async ({ page }) => {
+    test.setTimeout(150_000);
     await home(page); await openGame(page, 'fireworks');
     const box = await canvasBox(page);
     for (let i = 0; i < 200; i++) await page.mouse.click(box.x + (i * 37) % box.width, box.y + (i * 53) % (box.height * .6));

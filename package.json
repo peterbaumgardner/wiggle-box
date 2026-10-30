@@ -6,7 +6,9 @@
   "scripts": {
     "serve": "node tests/server.mjs",
     "test": "playwright test",
-    "test:fast": "playwright test --project=desktop"
+    "test:fast": "playwright test --project=desktop",
+    "stamp": "node tools/stamp-sw.mjs",
+    "stamp:check": "node tools/stamp-sw.mjs --check"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"
