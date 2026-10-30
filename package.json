@@ -1,0 +1,17 @@
+{
+  "name": "wiggle-box",
+  "private": true,
+  "version": "1.0.0",
+  "description": "28 touchscreen games for curious kids. The app itself is static (index.html); this file only drives the test suite.",
+  "scripts": {
+    "serve": "node tests/server.mjs",
+    "test": "playwright test",
+    "test:fast": "playwright test --project=desktop",
+    "stamp": "node tools/stamp-sw.mjs",
+    "stamp:check": "node tools/stamp-sw.mjs --check",
+    "test:perf": "playwright test --project=perf --no-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
