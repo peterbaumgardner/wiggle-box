@@ -25,7 +25,7 @@ init(stage,g){
     c.innerHTML=`${ch.state.catalyst?'✅':'⬜'} Catalyst`;c.setAttribute('aria-pressed',ch.state.catalyst);l.innerHTML=`${ch.state.light?'💡':'🌑'} Light`;l.setAttribute('aria-pressed',ch.state.light);pa.innerHTML=paused?'▶️ Play':'⏸️ Pause'}
 
   ex.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;const a=b.dataset.a,ad=b.dataset.add;
-    if(b.dataset.xp){xp=b.dataset.xp;ex.querySelectorAll('[data-xp]').forEach(x=>x.classList.toggle('on',x===b));tone(560,.07,'triangle');newChamber();exUI();info();return}
+    if(b.dataset.xp){xp=b.dataset.xp;ex.querySelectorAll('[data-xp]').forEach(x=>x.classList.toggle('on',x===b));tone(560,.07,'triangle');newChamber();info();return}
     if(b.dataset.cat){ch.set({catalyst:!ch.state.catalyst});tone(ch.state.catalyst?700:400,.1,'triangle');setToggles();info();return}
     if(b.dataset.light){ch.set({light:!ch.state.light});tone(ch.state.light?900:350,.1,'triangle');setToggles();info();return}
     if(mode==='atom'&&a==='view'){view=view==='shell'?'cloud':'shell';b.innerHTML=view==='shell'?'☁️ Clouds':'◎ Shells';b.setAttribute('aria-pressed',view==='cloud');tone(560,.07,'triangle');return}
@@ -211,7 +211,7 @@ init(stage,g){
   function newChamber(keep){if(!keep)paused=false;seenEv=0;flashes=[];
     if(xp==='free'){ch=S.chamber({seed:1,T:298});for(const[k,c]of Object.entries(inv))ch.add(k,c);ch.mark()}
     else ch=S.setup(S.EXPERIMENTS.find(x=>x.id===xp));
-    if(mode==='rx')exUI()}
+    if(mode==='rx')setToggles()}   /* only the toggle labels change; rebuilding the toolbar would make it re-fold under a finger */
   /* where the simulation box sits on screen. On a tall screen the box is drawn on its side (x and y swapped) so it fills
      the space; the gas inside doesn't care which way up it is. */
   const box=()=>{const W=dims.w,H=dims.h,rot=H>W*1.15,bw=rot?S.BOX.h:S.BOX.w,bh=rot?S.BOX.w:S.BOX.h,s=Math.min((W-16)/bw,(H-16)/bh),ox=(W-bw*s)/2,oy=(H-bh*s)/2;
