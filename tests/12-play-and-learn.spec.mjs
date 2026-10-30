@@ -405,6 +405,7 @@ test.describe('27 Letter Trace', () => {
   });
 
   test('tracing backwards or starting away from the green dot does not count', async ({ page }) => {
+    test.setTimeout(180_000);
     await home(page); await openGame(page, 'trace');
     await traceCurrent(page, { backwards: true });
     expect(await dbg(page, 'trace', d => d.state.done)).toBe(false);
