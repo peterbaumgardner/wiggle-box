@@ -18,7 +18,17 @@ export function appHash() {
 }
 export function stampedVersion() { return readFileSync(join(root, 'sw.js'), 'utf8').match(/const VERSION='([0-9a-f]+)'/)[1]; }
 
+/* every file index.html loads must be in the offline list, or the app breaks offline */
+export function missingFromShell() {
+  const sw = readFileSync(join(root, 'sw.js'), 'utf8'), html = readFileSync(join(root, 'index.html'), 'utf8');
+  const shell = new Set(JSON.parse(sw.match(/const SHELL=(\[[^\]]*\])/)[1].replace(/'/g, '"')));
+  const used = [...html.matchAll(/(?:src|href)="([^"#:]+)"/g)].map(m => m[1]);
+  return used.filter(u => !shell.has(u));
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const miss = missingFromShell();
+  if (miss.length) { console.error(`sw.js SHELL is missing: ${miss.join(', ')}`); process.exit(1); }
   const want = appHash(), have = stampedVersion();
   if (process.argv.includes('--check')) {
     if (want !== have) { console.error(`sw.js is stale: VERSION ${have}, app files hash to ${want}. Run: npm run stamp`); process.exit(1); }

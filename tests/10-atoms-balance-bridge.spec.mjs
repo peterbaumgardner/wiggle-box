@@ -320,6 +320,33 @@ test.describe('03 Bridge Builder', () => {
     expect(await dbg(page, 'bridge', d => d.result)).toBe(null);
   });
 
+  test('the truck only drives on road that meets the ground: no jumping up onto a road in the air, no cliffs, no ramps too steep', async ({ page }) => {
+    await home(page); await openGame(page, 'bridge');
+    // the bridge from the bug report: a strong steel truss with the road laid along its top, above the ground
+    const plan = await dbg(page, 'bridge', d => { const L = d.L(), g = d.grid(), n = Math.round((L.x1 - L.x0) / g), y0 = d.nodes[0].oy, X = i => L.x0 + i * g, T = y0 - 2 * g;
+      for (let i = 0; i < n; i++) d.addBeam(X(i), y0, X(i + 1), y0, 'steel');
+      for (let i = 1; i < n; i++) d.addBeam(X(i), y0, X(i), T, 'steel');
+      for (let i = 1; i < n - 1; i++) d.addBeam(X(i), T, X(i + 1), T, 'road');
+      d.addBeam(X(0), y0, X(1), T, 'steel'); d.addBeam(X(n), y0, X(n - 1), T, 'steel');
+      // like the screenshot: the top road runs on past the cliffs, over the grass, up in the air
+      d.addBeam(X(-2), T, X(0), T, 'road'); d.addBeam(X(0), T, X(1), T, 'road'); d.addBeam(X(0), y0, X(0), T, 'steel');
+      d.addBeam(X(n - 1), T, X(n), T, 'road'); d.addBeam(X(n), T, X(n + 2), T, 'road'); d.addBeam(X(n), y0, X(n), T, 'steel');
+      for (let i = 1; i < n - 1; i++) { if (i < n / 2) d.addBeam(X(i), T, X(i + 1), y0, 'steel'); else d.addBeam(X(i), y0, X(i + 1), T, 'steel'); }
+      return n; });
+    expect(plan).toBeGreaterThan(2);
+    expect(await runTruck(page)).toBe('fail');
+    await expect(page.locator('.simhint')).toContainText('road has to start at the ground');
+    // a road at ground level then a 45° ramp up: too steep
+    await page.locator('#clr').click().catch(() => {});
+    await dbg(page, 'bridge', d => { d.load(0); const L = d.L(), g = d.grid(), y0 = d.nodes[0].oy, X = i => L.x0 + i * g; d.addBeam(X(0), y0, X(1), y0 - g, 'road'); d.addBeam(X(1), y0 - g, X(2), y0 - g, 'road'); return 1; });
+    expect(await runTruck(page)).toBe('fail');
+    await expect(page.locator('.simhint')).toContainText(/Too steep|road has to start/);
+    // and a proper deck truss still holds
+    await dbg(page, 'bridge', d => { d.load(0); return 1; });
+    await buildTruss(page, { h: 1 });
+    expect(await runTruck(page)).toBe('win');
+  });
+
   test('Stop during a run puts everything back; Next changes the level', async ({ page }) => {
     await home(page); await openGame(page, 'bridge');
     await buildTruss(page, { h: 1 });
