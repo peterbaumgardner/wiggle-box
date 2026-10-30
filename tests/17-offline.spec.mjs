@@ -1,6 +1,6 @@
 // Offline play through the service worker: install, play all 28 games offline, update without mixing versions.
 import { test, expect, home, GAME_KEYS } from './helpers.mjs';
-import { appHash, stampedVersion } from '../tools/stamp-sw.mjs';
+import { appHash, stampedVersion, missingFromShell } from '../tools/stamp-sw.mjs';
 
 test.use({ serviceWorkers: 'allow' });
 
@@ -16,6 +16,10 @@ test('the service worker version matches the app files (run npm run stamp after 
   expect(stampedVersion()).toBe(appHash());
 });
 
+test('every file the page loads is in the offline list', () => {
+  expect(missingFromShell()).toEqual([]);
+});
+
 test('after one visit, the home screen and all 28 games work with the network off', async ({ page, context }) => {
   test.setTimeout(240_000);
   await home(page);
@@ -23,7 +27,7 @@ test('after one visit, the home screen and all 28 games work with the network of
   const ver = stampedVersion();
   const keys = await cacheKeys(page);
   expect(Object.keys(keys).filter(k => k.startsWith('wigglebox-'))).toEqual([`wigglebox-${ver}`]);
-  for (const f of ['/index.html', '/matter.min.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/maskable-512.png', '/apple-touch-icon.png'])
+  for (const f of ['/index.html', '/app.css', '/core.js', '/app.js', '/bridge.js', '/waves.js', '/matter.min.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/maskable-512.png', '/apple-touch-icon.png'])
     expect(keys[`wigglebox-${ver}`], f).toContain(f);
 
   await context.setOffline(true);
@@ -55,7 +59,7 @@ async function tempServer() {
   const { spawn } = await import('node:child_process');
   const { join } = await import('node:path');
   const repo = new URL('..', import.meta.url).pathname, dir = mkdtempSync(join(tmpdir(), 'wb-'));
-  for (const f of ['index.html', 'sw.js', 'matter.min.js', 'manifest.webmanifest', 'icons']) cpSync(join(repo, f), join(dir, f), { recursive: true });
+  for (const f of ['index.html', 'sw.js', 'matter.min.js', 'manifest.webmanifest', 'icons', 'css', 'js', 'games']) cpSync(join(repo, f), join(dir, f), { recursive: true });
   const port = 4300 + Math.floor(Math.random() * 500);
   const proc = spawn(process.execPath, [join(repo, 'tests/server.mjs'), String(port)], { env: { ...process.env, WB_ROOT: dir }, stdio: 'pipe' });
   await new Promise(r => proc.stdout.once('data', r));

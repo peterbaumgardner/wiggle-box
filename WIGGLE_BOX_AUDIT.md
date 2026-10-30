@@ -8,8 +8,8 @@ This file lists what was wrong and what changed. Which tests prove each game wor
 
 ## How the app is built
 
-- One static page, `index.html` (about 4,400 lines): CSS, the home screen, a registry of the 28 games (`GAMES`), and each
-  game's `init(stage, g)` function. No build step.
+- Originally one static page, `index.html` (about 4,400 lines) holding all CSS and code. It is now split: `css/app.css`,
+  `js/core.js` (shared), one file per game in `games/`, and `js/app.js` (home screen and sessions). Still no build step; see the README.
 - `matter.min.js` (Matter.js 0.19) is used only by Physics Lab, loaded on demand.
 - `sw.js` is the offline cache; `manifest.webmanifest` and `icons/` make it installable.
 - Every game draws into `#stage`. Most science and math games use a shared shell (`labShell`: top bar, canvas, info
@@ -52,6 +52,7 @@ and passes now. D01–D19 were reproduced on the original code before any fix (b
 | Atom Builder | Dragging an atom onto another often missed: the held atom and its bonds pushed the target away | Held atoms don't repel; their bond springs pause while held | 10 bonding tests |
 | Balance Scale | Tapping an empty pan added a dead step to Undo; Undo on the seesaw left the equation wrong; the seesaw block picker and the how-to line sat in a panel that is always hidden | Undo only records real moves and re-syncs; picker moved into a visible card | D09, D10, 10 |
 | Bridge Builder | **The physics was backwards**: a bare road held the truck and adding triangles made bridges fail; results changed with screen size; opening an info tab erased the bridge | New pin-jointed truss model (stiffness, strain limits, self-weight, real collapse); levels set in grid squares; bridge kept on resize | D05, 10 bridge tests (deck alone fails every level, a truss passes, steel beats wood, same result on every screen) |
+| Bridge Builder (found after the first release) | The truck jumped onto whichever road was highest, so a road floating three squares above the ground, on top of a truss, still carried it across | The truck follows the surface it's on: a road must meet the ground at the same height, can't be steeper than 35°, and a road ending in mid-air drops the truck | 10 "the truck only drives on road that meets the ground" |
 | Cannon Launch | A fast ball could pass through the wall on a slow frame | Collisions checked every 4 ms of flight | 11 (20 fps no-tunnel test) |
 | Chance Machine | With one die the panel claimed 1 was the most likely roll | Ties are reported as ties | D15 |
 | Circuit Lab | Parts at the edge broke when the screen narrowed; two bulbs in series on two batteries counted as "parallel"; two separate loops counted as "series" | Board never shrinks under parts; series/parallel read from the real wiring (nodal analysis) | D06–D08, 11 circuit tests |
