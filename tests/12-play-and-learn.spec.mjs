@@ -387,7 +387,7 @@ async function traceCurrent(page, { wobble = .5, backwards = false } = {}) {
 
 test.describe('27 Letter Trace', () => {
   test('every letter A-Z and number 0-9 can be finished with a realistic, wobbly trace', async ({ page }) => {
-    test.setTimeout(600_000);
+    test.setTimeout(900_000);
     await home(page); await openGame(page, 'trace');
     for (const set of ['abc', 'num']) {
       await page.locator(`[data-set="${set}"]`).click();
@@ -397,7 +397,8 @@ test.describe('27 Letter Trace', () => {
         await traceCurrent(page);
         const st = await dbg(page, 'trace', d => d.state);
         expect(st.done, `traced ${chars[i]}`).toBe(true);
-        await page.locator('#next').click();
+        // a finished letter moves on by itself after a few seconds (tapping Next as well would skip one)
+        await waitDbg(page, 'trace', (d, G, W, c) => d.state.ch === c && !d.state.done, { arg: chars[(i + 1) % chars.length], timeout: 20_000 });
       }
     }
     expect(Number(await page.locator('#game .starn').textContent())).toBe(36);

@@ -189,9 +189,10 @@ test.describe('25 Space Orbits', () => {
     await expect(page.locator('.fxo')).toContainText('Mars');
     // fast doubles the simulated time per second
     // simulated seconds per real second, measured in the page over 2.5 s
-    const rate = () => page.evaluate(() => new Promise(res => { const d = window.WiggleBox.games.space._debug, s0 = d.simT, t0 = performance.now(); setTimeout(() => res((d.simT - s0) / ((performance.now() - t0) / 1000)), 2500); }));
+    // simulated time per game step (the loop runs 60 steps a second); counting steps keeps a busy machine out of it
+    const rate = () => page.evaluate(() => new Promise(res => { const d = window.WiggleBox.games.space._debug, s0 = d.simT, n0 = d.loopN; setTimeout(() => res((d.simT - s0) / (d.loopN - n0) * 60), 1500); }));
     const r1 = await rate(); await page.locator('[data-a="fast"]').click(); const r2 = await rate();
-    expect(r2 / r1).toBeGreaterThan(1.6); expect(r2 / r1).toBeLessThan(2.4);
+    expect(r1).toBeCloseTo(1, 2); expect(r2).toBeCloseTo(2, 2);
     await page.locator('[data-a="fast"]').click();
     // black hole: stronger pull; a tap still makes a circular orbit around it, and a weak throw falls in
     const g0 = await SP(page, d => d.gm());

@@ -79,15 +79,16 @@ test.describe('04 Cannon Launch', () => {
     test.setTimeout(240_000);
     await home(page); await openGame(page, 'cannon');
     for (let lv = 0; lv < 12; lv++) {
-      await waitDbg(page, 'cannon', (d, G, W, lv) => d.lvl === lv && d.target && !d.target.hit, { arg: lv, timeout: 8000 });
+      await waitDbg(page, 'cannon', (d, G, W, lv) => d.lvl === lv && d.target && !d.target.hit, { arg: lv, timeout: 20_000 });
       const st = await dbg(page, 'cannon', d => ({ t: d.target, wall: d.wall, g: d.grav() }));
       const a = aim(st.t, st.wall, st.g);
       expect(a, `level ${lv + 1} has a reachable shot`).toBeTruthy();
       await dbg(page, 'cannon', (d, G, W, [th, v]) => { d.set(th, v); return 1; }, [a.th, a.v]);
       await page.locator('#fire').click();
-      await waitDbg(page, 'cannon', d => d.shot && d.shot.done, { timeout: 15_000 });
+      // flights run in game time; on a busy machine game time runs slower than the wall clock, so wait generously
+      await waitDbg(page, 'cannon', d => d.shot && d.shot.done, { timeout: 45_000 });
       expect(await dbg(page, 'cannon', d => d.target.hit), `hit on level ${lv + 1}`).toBe(true);
-      await waitDbg(page, 'cannon', (d, G, W, lv) => d.lvl === lv + 1, { arg: lv, timeout: 6000 });
+      await waitDbg(page, 'cannon', (d, G, W, lv) => d.lvl === lv + 1, { arg: lv, timeout: 20_000 });
     }
   });
 

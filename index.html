@@ -3805,13 +3805,13 @@ init(stage,g){
     const k=Math.min(W,H)/oR;for(const b of bodies){b.x=cx+(b.x-ox)*k;b.y=cy+(b.y-oy)*k;b.vx*=k;b.vy*=k;b.r*=S/oS;b.trail=b.trail.map(([x,y])=>[cx+(x-ox)*k,cy+(y-oy)*k])}}
   const ro=new ResizeObserver(resize);ro.observe(cv);g.onEnd(()=>ro.disconnect());
   solar();
-  let simT=0;
-  GAMES.space._debug={get bodies(){return bodies},get simT(){return simT},gm,get cx(){return cx},get cy(){return cy},get hole(){return hole},get fast(){return fast},get names(){return names},get paths(){return paths},get pick(){return pick_},get focus(){return focus},sunR,get W(){return W},get H(){return H},get S(){return S}};
+  let simT=0,loopN=0;
+  GAMES.space._debug={get bodies(){return bodies},get simT(){return simT},get loopN(){return loopN},gm,get cx(){return cx},get cy(){return cy},get hole(){return hole},get fast(){return fast},get names(){return names},get paths(){return paths},get pick(){return pick_},get focus(){return focus},sunR,get W(){return W},get H(){return H},get S(){return S}};
   kbPointer(g,cv);
   const PK=Object.keys(P);
   g.key(e=>{const k=e.key.toLowerCase();if(/^[0-9]$/.test(k)){const i=k==='0'?9:+k-1;if(PK[i]){pick_=PK[i];syncOpts();return true}}
     const a={s:'system',h:'hole',f:'fast',c:'clear',n:'names',p:'paths'}[k];if(a){stage.querySelector(`[data-a="${a}"]`).click();return true}return false});
-  g.loop(dt=>{frame++;if(frame%8===0)ovUpdate();const sub=fast?6:3,h=Math.min(dt,40)/1000/3;for(let i=0;i<sub;i++){step(h);simT+=h}
+  g.loop(dt=>{frame++;if(frame%8===0)ovUpdate();const sub=fast?6:3,h=Math.min(dt,40)/1000/3;for(let i=0;i<sub;i++){step(h);simT+=h}loopN++;
     if(frame%2===0)for(const b of bodies){if(b.parent)continue;b.trail.push([b.x,b.y]);if(b.trail.length>90)b.trail.shift()}
     draw()});
 }}});

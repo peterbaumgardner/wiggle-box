@@ -241,6 +241,8 @@ test.describe('16 Shape Lab', () => {
       expect(Math.abs(2 * 3.1416 * +shown[1] - +shown[2])).toBeLessThan(0.006);  // the written-out product agrees with the answer
     }
     const box = await canvasBox(page);
+    let last = null;   // let the view re-fit to the last radius before aiming at the handle
+    for (let k = 0; k < 40; k++) { const v = JSON.stringify(await dbg(page, 'geo', d => d.toPx(1, 1))); if (v === last) break; last = v; await page.waitForTimeout(50); }
     const c = await dbg(page, 'geo', d => [d.toPx(0, 0), d.toPx(d.circ.r, 0)]);
     await mouseDrag(page, [[box.x + c[1][0], box.y + c[1][1]], [box.x + c[0][0] + (c[1][0] - c[0][0]) * .6, box.y + c[1][1]]], { steps: 10 });
     expect(await dbg(page, 'geo', d => d.circ.r)).toBe(3);

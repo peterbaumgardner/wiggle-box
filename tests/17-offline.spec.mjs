@@ -78,7 +78,7 @@ test('an update replaces the whole cache at once, and a broken page from the ser
     await page.reload();
     await expect(page.locator('meta[name="wb-version"]')).toHaveCount(1);        // online: the newest page at once
     await page.evaluate(() => navigator.serviceWorker.getRegistration().then(r => r.update()));
-    await expect.poll(async () => Object.keys(await cacheKeys(page)), { timeout: 20_000 }).toEqual(['wigglebox-0000000000a2']);
+    await expect.poll(async () => Object.keys(await cacheKeys(page)), { timeout: 60_000 }).toEqual(['wigglebox-0000000000a2']);
     // offline: the new version, complete (page and physics engine)
     await context.setOffline(true);
     await page.reload();

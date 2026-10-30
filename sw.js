@@ -3,7 +3,7 @@
    - The page itself is network-first, so a connected device always gets the newest version; offline it gets the stored copy.
    - Everything else is cache-first. A new version replaces the old cache in one step, so files from two versions never mix.
    The version below is the content hash of the app files; `npm run stamp` updates it, and a test fails if it is stale. */
-const VERSION='e85f59cb2196';
+const VERSION='8f1a94e9996c';
 const CACHE='wigglebox-'+VERSION;
 const SHELL=['./','index.html','matter.min.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
