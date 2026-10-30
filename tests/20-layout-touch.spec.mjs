@@ -18,6 +18,7 @@ function unreachable(page) {
       // only panels a finger can scroll count (overflow auto/scroll); scrolling an overflow:hidden box would cheat
       for (let a = el.parentElement; a; a = a.parentElement) { const o = getComputedStyle(a); if (/(auto|scroll)/.test(o.overflowY + o.overflowX) && (a.scrollHeight > a.clientHeight || a.scrollWidth > a.clientWidth)) { el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); break; } }
       await new Promise(r => requestAnimationFrame(r));
+      if (!el.isConnected) continue;   // the game rebuilt it while we looked (a new info tab, say)
       const r = el.getBoundingClientRect(), name = (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30);
       if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) { bad.push(`${name}: off screen ${Math.round(r.left)},${Math.round(r.top)}`); continue; }
       const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
