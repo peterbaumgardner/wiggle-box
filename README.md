@@ -16,6 +16,7 @@ js/data.js          shared word and picture lists
 games/<game>.js     one file per game (28): atoms, balance, bridge, cannon, chance, circuit, bubbles, paint, feed,
                     shapes, music, words, fireworks, forge, potion, geo, graph, art, laser, physics, primes,
                     puzzles, robo, sand, space, splash, trace, waves
+games/atoms-sci.js  Atom Builder's science model (no drawing; loaded before games/atoms.js). See docs/ATOM_BUILDER_SCIENCE.md
 js/app.js           home screen, opening and closing games, keyboard, test hook (loaded last)
 sw.js               offline cache
 ```
