@@ -530,3 +530,12 @@ img,canvas{-webkit-user-drag:none}
   .lt{width:clamp(48px,16vh,84px);font-size:clamp(28px,9vh,52px)}
   .puzhud{top:6px;gap:6px}.puzhud .pbtn{padding:4px 12px;font-size:15px}.puzhud .pbtn.go{font-size:17px}.plv{font-size:13px;padding:4px 10px}
 }
+
+/* Magic Paint: scrollable, finger-friendly creative tool tray. */
+.paint .tools{gap:8px;scrollbar-width:thin;overscroll-behavior-x:contain;touch-action:pan-x;padding:10px 14px;min-height:76px}
+.paint .tools button{touch-action:manipulation;user-select:none;-webkit-user-select:none;flex-shrink:0}
+.paint .tools .tb{transition:background-color .12s,transform .12s}
+.paint .tools .tb.on{background:#ffd54f;box-shadow:inset 0 0 0 2px #1d1842;transform:translateY(-2px)}
+.paint .tools .tb:focus-visible,.paint .tools .sw:focus-visible{outline:4px solid #3d7bff;outline-offset:4px}
+.paint canvas{touch-action:none;user-select:none;-webkit-user-select:none}
+@media(max-width:600px){.paint .tools{gap:7px;padding:8px 10px;min-height:66px}.paint .tools .tb{min-width:46px;height:46px;font-size:23px}.paint .tools .sw{width:46px;height:46px}}
