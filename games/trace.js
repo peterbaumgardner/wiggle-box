@@ -226,5 +226,5 @@ init(stage,g){
       if(p>=s.length-3){si++;p=0;tone(660,.12,'triangle');if(si>=strokes.length){done=true;finish()}}return true}
     if(/^[a-z0-9]$/i.test(e.key)){const c=e.key.toUpperCase(),inSet=SETS[set].indexOf(c);if(inSet<0){set=set==='abc'?'num':'abc';stage.querySelectorAll('[data-set]').forEach(x=>x.classList.toggle('on',x.dataset.set===set))}load(SETS[set].indexOf(c));return true}return false});
   load(0);g.loop(()=>{frame++;draw()});
-  GAMES.trace._debug={get state(){return{ch,si,p,done,n:strokes.map(s=>s.length)}},toPx:q=>toPx(q),get strokes(){return strokes},tol,SETS};
+  GAMES.trace._debug={get state(){return{ch,si,p,done,n:strokes.map(s=>s.length)}},toPx:q=>toPx(q),get strokes(){return strokes},get literacy(){return {mode,goal,successes,solved,tries,wordRound}},tol,SETS};
 }}});
