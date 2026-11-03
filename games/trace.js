@@ -74,7 +74,7 @@ init(stage,g){
   let mode='trace',spoken=true,roundId=0,goal='',choices=[],successes=0,tries=0,wordRound=null,solved=false;
   const PALETTE=['#ffcf66','#a9efc6','#b7e8ff','#e6c8ff','#ffb9d4'];
   const BASIC=['A','B','C','D','E','F','G','H','M','O','P','S','T','Y'];
-  const EASY_WORDS=[['AT','🐱','at'],['UP','⬆️','up'],['GO','🚗','go'],['ME','🙋','me'],['CAT','🐱','cat'],['DOG','🐶','dog'],['SUN','☀️','sun'],['BUS','🚌','bus'],['PIG','🐷','pig'],['HAT','🎩','hat']];
+  const EASY_WORDS=[['CAT','🐱','cat'],['DOG','🐶','dog'],['SUN','☀️','sun'],['BUS','🚌','bus'],['PIG','🐷','pig'],['HAT','🎩','hat'],['COW','🐮','cow'],['BEE','🐝','bee'],['FOX','🦊','fox'],['EGG','🥚','egg']];
   function speak(t){
     if(!spoken||!soundOn||!('speechSynthesis' in window))return;
     try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=.78;u.pitch=1.12;u.volume=.85;u.lang='en-US';speechSynthesis.speak(u)}catch(e){console.warn('Alphabet speech unavailable',e)}
@@ -179,7 +179,7 @@ init(stage,g){
     if(set==='abc'){const L=LETTERS.find(l=>l[0]===ch);say(`${ch}! ${ch} is for ${L[1]}!`)}else say(`${NUMW[+ch]}! You traced ${NUMW[+ch]}!`);
     const my=rid;g.later(()=>{if(g.alive&&done&&my===rid)load(idx+1)},3800)}
   fingers(cv,{down(f){startTrace(f)},move(f){follow(f)},up(f){if(tracing===f.id)tracing=null}});
-  stage.querySelector('.drow').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  traceControls.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     if(b.dataset.set){set=b.dataset.set;stage.querySelectorAll('[data-set]').forEach(x=>x.classList.toggle('on',x===b));load(0)}
     if(b.id==='prev')load(idx-1);if(b.id==='next')load(idx+1);if(b.id==='again')load(idx);tone(560,.08,'triangle')});
   function polyPath(pts,upto){ctx.beginPath();for(let i=0;i<=Math.min(upto,pts.length-1);i++){const q=toPx(pts[i]);i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])}}
