@@ -52,68 +52,248 @@ test.describe('07 Bubble Pop', () => {
 });
 
 /* ---------------- Magic Paint ---------------- */
+/* Magic Paint: read the picture the child sees (paper + ink + outlines) at a page position. */
 async function px(page, x, y) {
-  return page.evaluate(([x, y]) => { const c = document.querySelector('#stage canvas'), r = c.getBoundingClientRect(), k = c.width / r.width; const d = c.getContext('2d').getImageData(Math.round((x - r.left) * k), Math.round((y - r.top) * k), 1, 1).data; return [d[0], d[1], d[2]]; }, [x, y]);
+  const box = await canvasBox(page);
+  return dbg(page, 'paint', (d, G, W, a) => d.pixel(a[0], a[1]), [x - box.x, y - box.y]);
 }
 const near = (a, b, t = 40) => a.every((v, i) => Math.abs(v - b[i]) <= t);
+const st = page => dbg(page, 'paint', d => d.state);
+async function pick(page, cat, sel) {
+  await page.locator(`.pp-bar [data-cat="${cat}"]`).click();
+  await expect(page.locator('.pp-menu')).toBeVisible();
+  if (sel) await page.locator(`.pp-menu ${sel}`).click();
+}
+const pickColor = (page, hex) => pick(page, 'color', `[data-col="${hex}"]`);
 test.describe('08 Magic Paint', () => {
+  test('the paper gets nearly the whole stage; every category opens a menu, a pick closes it, a tap outside closes it without painting', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const sizes = await page.evaluate(() => { const s = document.querySelector('#stage').getBoundingClientRect(), b = document.querySelector('.pp-board').getBoundingClientRect(); return [b.height / s.height, b.width / s.width]; });
+    expect(sizes[0]).toBeGreaterThan(.86); expect(sizes[1]).toBeGreaterThan(.98);
+    expect(await page.locator('.pp-bar button').count()).toBeLessThanOrEqual(9);
+    for (const cat of ['color', 'brush', 'stamp', 'magic', 'paper']) {
+      await page.locator(`.pp-bar [data-cat="${cat}"]`).click();
+      await expect(page.locator('.pp-menu')).toBeVisible();
+      expect((await st(page)).openCat).toBe(cat);
+      await page.locator(`.pp-bar [data-cat="${cat}"]`).click();   // same button again closes it
+      await expect(page.locator('.pp-menu')).toBeHidden();
+    }
+    const box = await canvasBox(page);
+    await page.locator('.pp-bar [data-cat="color"]').click();
+    await page.mouse.click(box.x + 40, box.y + 40);   // the shade, above the menu
+    await expect(page.locator('.pp-menu')).toBeHidden();
+    expect(near(await px(page, box.x + 40, box.y + 40), [255, 255, 255], 1)).toBe(true);
+    expect((await st(page)).hist).toBe(0);
+    await pickColor(page, '#3D7BFF');
+    await expect(page.locator('.pp-menu')).toBeHidden();
+    expect((await st(page)).colorName).toBe('Blue');
+    await expect(page.locator('.pp-say')).toContainText('Blue');
+  });
+
   test('a stroke paints the picked colour exactly under the finger, right up to every edge', async ({ page }) => {
     await home(page); await openGame(page, 'paint');
     const box = await canvasBox(page);
-    await page.locator('.sw[data-n="Blue"]').click();
+    await pickColor(page, '#3D7BFF');
     await mouseDrag(page, [[box.x + 100, box.y + 100], [box.x + 300, box.y + 120]], { steps: 10 });
     expect(near(await px(page, box.x + 200, box.y + 110), [0x3D, 0x7B, 0xFF], 8)).toBe(true);
     expect(near(await px(page, box.x + 200, box.y + 160), [255, 255, 255], 2)).toBe(true);
-    await page.locator('.sw[data-n="Red"]').click();
+    await pickColor(page, '#FF4F5E');
     for (const [a, b] of [[[box.x + 3, box.y + 40], [box.x + 3, box.y + 200]], [[box.x + box.width - 3, box.y + 40], [box.x + box.width - 3, box.y + 200]], [[box.x + 40, box.y + 3], [box.x + 300, box.y + 3]], [[box.x + 40, box.y + box.height - 3], [box.x + 300, box.y + box.height - 3]]]) {
       await mouseDrag(page, [a, b], { steps: 8 });
       expect(near(await px(page, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2), [0xFF, 0x4F, 0x5E], 8)).toBe(true);
     }
   });
 
-  test('brush sizes, eraser, stamps, mirror, undo and new paper', async ({ page }) => {
+  test('every brush leaves paint, sizes are right, the eraser shows the paper colour, undo and redo work', async ({ page }) => {
     await home(page); await openGame(page, 'paint');
-    const box = await canvasBox(page), y = box.y + 300;
-    await page.locator('.sw[data-n="Black"]').click();
-    const width = async (x) => { let w = 0; for (let dy = -30; dy <= 30; dy++) if (!near(await px(page, x, y + dy), [255, 255, 255], 30)) w++; return w; };
-    await page.locator('.sz[data-s="8"]').click(); await mouseDrag(page, [[box.x + 100, y], [box.x + 200, y]], { steps: 6 });
-    await page.locator('.sz[data-s="34"]').click(); await mouseDrag(page, [[box.x + 300, y], [box.x + 400, y]], { steps: 6 });
-    const thin = await width(box.x + 150), fat = await width(box.x + 350);
-    expect(Math.abs(thin - 8)).toBeLessThanOrEqual(3);
-    expect(Math.abs(fat - 34)).toBeLessThanOrEqual(3);
-    // eraser paints the paper colour back
-    await page.locator('.sw.eraser').click();
+    const box = await canvasBox(page);
+    await pickColor(page, '#1D1842');
+    const ink = async (x0, y0, w, h) => dbg(page, 'paint', (d, G, W, a) => { let n = 0; for (let y = a[1]; y < a[1] + a[3]; y += 3) for (let x = a[0]; x < a[0] + a[2]; x += 3) { const c = d.pixel(x, y); if (c[0] < 200 || c[1] < 200 || c[2] < 200) n++; } return n; }, [x0, y0, w, h]);
+    let x = 60;
+    for (const t of ['brush', 'neon', 'spray', 'sparkle', 'bubble']) {
+      await pick(page, 'brush', `[data-tool="${t}"]`);
+      expect((await st(page)).tool).toBe(t);
+      await mouseDrag(page, [[box.x + x, box.y + 80], [box.x + x, box.y + 220]], { steps: 8 });
+      expect(await ink(x - 30, 70, 60, 160), t).toBeGreaterThan(10);
+      x += 90;
+    }
+    await pick(page, 'brush', '[data-tool="brush"]');
+    const y = box.y + 320;
+    const width = async (xx) => { let w = 0; for (let dy = -40; dy <= 40; dy++) if (!near(await px(page, xx, y + dy), [255, 255, 255], 30)) w++; return w; };
+    await pick(page, 'brush', '[data-size="8"]'); await mouseDrag(page, [[box.x + 100, y], [box.x + 200, y]], { steps: 6 });
+    await pick(page, 'brush', '[data-size="34"]'); await mouseDrag(page, [[box.x + 300, y], [box.x + 400, y]], { steps: 6 });
+    expect(Math.abs(await width(box.x + 150) - 8)).toBeLessThanOrEqual(3);
+    expect(Math.abs(await width(box.x + 350) - 34)).toBeLessThanOrEqual(3);
+    // pink paper first: the eraser must show pink, not white
+    await pick(page, 'paper', '[data-paper="#FFE3EF"]');
+    expect(near(await px(page, box.x + 350, y), [0x1D, 0x18, 0x42], 10)).toBe(true);   // changing paper keeps the drawing
+    expect(near(await px(page, box.x + 350, y + 100), [0xFF, 0xE3, 0xEF], 2)).toBe(true);
+    await page.locator('#eraser').click();
+    expect((await st(page)).tool).toBe('eraser');
     await mouseDrag(page, [[box.x + 280, y], [box.x + 420, y]], { steps: 8 });
-    expect(near(await px(page, box.x + 350, y), [255, 255, 255], 2)).toBe(true);
-    // undo brings the fat line back
+    expect(near(await px(page, box.x + 350, y), [0xFF, 0xE3, 0xEF], 2)).toBe(true);
     await page.locator('#undo').click();
     expect(near(await px(page, box.x + 350, y), [0x1D, 0x18, 0x42], 10)).toBe(true);
-    // a stamp leaves colour around the tap
-    await page.locator('.st[data-st="⭐"]').click();
-    await page.mouse.click(box.x + 600, box.y + 150);
-    let coloured = 0; for (let dx = -20; dx <= 20; dx += 4) for (let dy = -20; dy <= 20; dy += 4) if (!near(await px(page, box.x + 600 + dx, box.y + 150 + dy), [255, 255, 255], 20)) coloured++;
-    expect(coloured).toBeGreaterThan(5);
-    // mirror: a dot in one corner appears in all four
-    await page.locator('#mir').click();
-    await page.locator('.sw[data-n="Green"]').click();
+    await page.locator('#redo').click();
+    expect(near(await px(page, box.x + 350, y), [0xFF, 0xE3, 0xEF], 2)).toBe(true);
+    // the eraser button again goes back to the brush; picking a colour also leaves the eraser
+    await page.locator('#eraser').click(); expect((await st(page)).tool).toBe('brush');
+    await page.locator('#eraser').click(); await pickColor(page, '#24C786'); expect((await st(page)).tool).toBe('brush');
+    // undo the paper change too
+    await page.locator('#undo').click(); await page.locator('#undo').click();
+    expect((await st(page)).paper).toBe('#FFFFFF');
+  });
+
+  test('stamps: shapes, animals, things, letters and numbers stamp in place, say what they are and count themselves', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page);
+    const coloured = async (cx, cy) => { let n = 0; for (let dx = -20; dx <= 20; dx += 4) for (let dy = -20; dy <= 20; dy += 4) if (!near(await px(page, cx + dx, cy + dy), [255, 255, 255], 20)) n++; return n; };
+    await pickColor(page, '#3D7BFF');
+    await pick(page, 'stamp', '[data-st="shape"][data-v="triangle"]');
+    await expect(page.locator('.pp-say')).toContainText('3 sides');
+    for (let i = 0; i < 3; i++) await page.mouse.click(box.x + 120 + i * 110, box.y + 150);
+    await expect(page.locator('.pp-say')).toContainText('3');
+    await expect(page.locator('.pp-say')).toContainText('Triangles');
+    expect(near(await px(page, box.x + 120, box.y + 155), [0x3D, 0x7B, 0xFF], 12)).toBe(true);
+    let x = 120;
+    for (const [tab, v, say] of [['animals', '🐸', 'Frog'], ['things', '🚀', 'Rocket'], ['abc', 'B', 'Bear'], ['num', '3', 'three']]) {
+      await page.locator('.pp-bar [data-cat="stamp"]').click();
+      await page.locator(`.pp-tab[data-tab="${tab}"]`).click();
+      await page.locator(`.pp-menu [data-v="${v}"]`).click();
+      await page.mouse.click(box.x + x, box.y + 380);
+      await expect(page.locator('.pp-say')).toContainText(say);
+      expect(await coloured(box.x + x, box.y + 380), v).toBeGreaterThan(5);
+      x += 140;
+    }
+    // picking a brush leaves stamps
+    await pick(page, 'brush', '[data-tool="brush"]');
+    expect((await st(page)).stamp).toBe(null);
+  });
+
+  test('mirror, four corners and snowflake copy every mark; a stroke from the middle line draws no stray lines', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page), W = box.width, H = box.height;
+    await pickColor(page, '#24C786');
+    await pick(page, 'magic', '[data-mir="four"]');
     await page.mouse.click(box.x + 60, box.y + 60);
-    for (const [x, yy] of [[60, 60], [box.width - 60, 60], [60, box.height - 60], [box.width - 60, box.height - 60]]) expect(near(await px(page, box.x + x, box.y + yy), [0x24, 0xC7, 0x86], 12)).toBe(true);
-    await page.locator('#clr').click();
-    expect(near(await px(page, box.x + 60, box.y + 60), [255, 255, 255], 1)).toBe(true);
+    for (const [x, y] of [[60, 60], [W - 60, 60], [60, H - 60], [W - 60, H - 60]]) expect(near(await px(page, box.x + x, box.y + y), [0x24, 0xC7, 0x86], 12)).toBe(true);
+    await expect(page.locator('.pp-say')).toContainText('match');
+    await pick(page, 'magic', '[data-mir="two"]');
+    await pickColor(page, '#FF4F5E');
+    await mouseDrag(page, [[box.x + W / 2, box.y + 200], [box.x + W / 2 - 150, box.y + 200]], { steps: 8 });
+    expect(near(await px(page, box.x + W / 2 + 140, box.y + 200), [0xFF, 0x4F, 0x5E], 12)).toBe(true);
+    expect(near(await px(page, box.x + W / 2 + 75, box.y + 260), [255, 255, 255], 2)).toBe(true);
+    await pick(page, 'magic', '[data-mir="snow"]');
+    await pickColor(page, '#9A5BFF');
+    await page.mouse.click(box.x + W / 2 + 120, box.y + H / 2);
+    expect(near(await px(page, box.x + W / 2 - 120, box.y + H / 2), [0x9A, 0x5B, 0xFF], 12)).toBe(true);
+    expect(near(await px(page, box.x + W / 2 + 60, box.y + H / 2 - 120 * Math.sin(Math.PI / 3)), [0x9A, 0x5B, 0xFF], 12)).toBe(true);
+    await pick(page, 'magic', '[data-mir="off"]');
+    expect((await st(page)).mirror).toBe('off');
+  });
+
+  test('art talk: straight lines, zigzags, loops and dots are described with their colour', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page), o = (x, y) => [box.x + x, box.y + y];
+    await pickColor(page, '#FF8A2B');
+    await mouseDrag(page, [o(100, 100), o(500, 100)], { steps: 20 });
+    await expect(page.locator('.pp-say')).toContainText(/straight/i);
+    await expect(page.locator('.pp-say')).toContainText('Orange');
+    await expect(page.locator('.pp-say')).toContainText('across');
+    await mouseDrag(page, [o(100, 300), o(160, 220), o(220, 300), o(280, 220), o(340, 300), o(400, 220)], { steps: 8 });
+    await expect(page.locator('.pp-say')).toContainText(/zigzag/i);
+    const loop = []; for (let i = 0; i <= 40; i++) { const a = i / 40 * Math.PI * 2; loop.push(o(700 + 90 * Math.cos(a), 300 + 90 * Math.sin(a))); }
+    await mouseDrag(page, loop, { steps: 2 });
+    await expect(page.locator('.pp-say')).toContainText('circle');
+    for (let i = 0; i < 3; i++) await page.mouse.click(box.x + 100 + i * 30, box.y + 450);
+    await expect(page.locator('.pp-say')).toContainText(/three dots/i);
+    // words can be switched off
+    await pick(page, 'magic', '[data-words]');
+    expect((await st(page)).words).toBe(false);
+  });
+
+  test('mixing pot: red + yellow makes orange (a star the first time); colour + white is light', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const s0 = await page.evaluate(() => +document.querySelector('.starn').textContent);
+    await page.locator('.pp-bar [data-cat="color"]').click();
+    await page.locator('.pp-menu [data-mix][data-n="Red"]').click();
+    await page.locator('.pp-menu [data-mix][data-n="Yellow"]').click();
+    expect((await st(page)).colorName).toBe('Orange');
+    await expect(page.locator('.pp-say')).toContainText('Red + Yellow = Orange');
+    expect(await page.evaluate(() => +document.querySelector('.starn').textContent)).toBe(s0 + 1);
+    await page.locator('.pp-menu [data-mix][data-n="Blue"]').click();
+    await page.locator('.pp-menu [data-mix][data-n="White"]').click();
+    expect((await st(page)).colorName).toBe('Light blue');
+    await expect(page.locator('.pp-menu')).toBeHidden({ timeout: 4000 });
+  });
+
+  test('coloring pages: the fill bucket colours a piece and names its shape; colouring every piece earns a star; the number page counts', async ({ page }) => {
+    test.setTimeout(90_000);
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page);
+    await pick(page, 'paper', '[data-page="house"]');
+    expect((await st(page)).tool).toBe('fill');
+    await pickColor(page, '#FF4F5E');
+    const parts = await dbg(page, 'paint', d => d.partCenters());
+    expect(parts.length).toBe(7);
+    const roof = parts.find(p => p.name === 'roof');
+    await page.mouse.click(box.x + roof.pt[0], box.y + roof.pt[1]);
+    await expect(page.locator('.pp-say')).toContainText('roof');
+    await expect(page.locator('.pp-say')).toContainText('triangle');
+    expect(near(await px(page, box.x + roof.pt[0], box.y + roof.pt[1]), [0xFF, 0x4F, 0x5E], 4)).toBe(true);
+    // the fill stops at the outline: the wall below stays white
+    const wall = parts.find(p => p.name === 'wall');
+    expect(near(await px(page, box.x + wall.pt[0], box.y + wall.pt[1]), [255, 255, 255], 2)).toBe(true);
+    const s0 = await page.evaluate(() => +document.querySelector('.starn').textContent);
+    for (const p of parts.filter(p => p.name !== 'roof')) await page.mouse.click(box.x + p.pt[0], box.y + p.pt[1]);
+    await expect.poll(() => page.evaluate(() => +document.querySelector('.starn').textContent)).toBe(s0 + 1);
+    await expect(page.locator('.pp-say')).toContainText('whole house');
+    // the number page: 1, then tapping again gives 2 dots to colour and count
+    await pick(page, 'paper', '[data-page="num"]');
+    await pick(page, 'paper', '[data-page="num"]');
+    expect((await st(page)).numN).toBe(2);
+    const dots = await dbg(page, 'paint', d => d.partCenters());
+    expect(dots.length).toBe(2);
+    await page.mouse.click(box.x + dots[0].pt[0], box.y + dots[0].pt[1]);
+    await expect(page.locator('.pp-say')).toContainText('one');
+    await page.mouse.click(box.x + dots[1].pt[0], box.y + dots[1].pt[1]);
+    await expect(page.locator('.pp-say')).toContainText('counted two', { timeout: 4000 });
+    // undo goes back to the house, colours and all
+    await page.locator('#undo').click(); await page.locator('#undo').click(); await page.locator('#undo').click(); await page.locator('#undo').click();
+    expect((await st(page)).page.id).toBe('house');
+    expect(near(await px(page, box.x + roof.pt[0], box.y + roof.pt[1]), [0xFF, 0x4F, 0x5E], 4)).toBe(true);
+  });
+
+  test('new paper needs two taps, and undo brings the picture back; letter pages step through the alphabet', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page);
+    await pickColor(page, '#24C786');
+    await mouseDrag(page, [[box.x + 60, box.y + 60], [box.x + 200, box.y + 60]], { steps: 6 });
+    await page.locator('.pp-bar [data-cat="paper"]').click();
+    await page.locator('.pp-menu #clr').click();
+    expect(near(await px(page, box.x + 100, box.y + 60), [0x24, 0xC7, 0x86], 12)).toBe(true);   // one tap does nothing yet
+    await page.locator('.pp-menu #clr').click();
+    expect(near(await px(page, box.x + 100, box.y + 60), [255, 255, 255], 1)).toBe(true);
     await page.locator('#undo').click();
-    expect(near(await px(page, box.x + 60, box.y + 60), [0x24, 0xC7, 0x86], 12)).toBe(true);
+    expect(near(await px(page, box.x + 100, box.y + 60), [0x24, 0xC7, 0x86], 12)).toBe(true);
+    await pick(page, 'paper', '[data-page="abc"]');
+    await expect(page.locator('.pp-say')).toContainText('A is for Apple');
+    await pick(page, 'paper', '[data-page="abc"]');
+    await expect(page.locator('.pp-say')).toContainText('B is for Bear');
   });
 
   test('a stroke that leaves the paper and comes back stays one continuous line, and the picture survives a resize', async ({ page }) => {
     await home(page); await openGame(page, 'paint');
     const box = await canvasBox(page);
-    await page.locator('.sw[data-n="Purple"]').click();
+    await pickColor(page, '#9A5BFF');
     await mouseDrag(page, [[box.x + 200, box.y + 200], [box.x + 200, box.y - 40], [box.x + 260, box.y + 200]], { steps: 10 });
     expect(near(await px(page, box.x + 200, box.y + 150), [0x9A, 0x5B, 0xFF], 10)).toBe(true);
     expect(near(await px(page, box.x + 252, box.y + 150), [0x9A, 0x5B, 0xFF], 40)).toBe(true);
     await page.setViewportSize({ width: 1200, height: 860 });
     await page.waitForTimeout(400);
-    expect(near(await px(page, box.x + 200, box.y + 150), [0x9A, 0x5B, 0xFF], 10)).toBe(true);
+    const b2 = await canvasBox(page);
+    const sx = b2.width / box.width, sy = b2.height / box.height;
+    expect(near(await px(page, b2.x + 200 * sx, b2.y + 150 * sy), [0x9A, 0x5B, 0xFF], 30)).toBe(true);
   });
 });
 

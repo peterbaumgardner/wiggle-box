@@ -91,14 +91,7 @@ button:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
   display:grid;place-items:center;font-family:var(--font-display);font-weight:800;color:var(--ink);will-change:transform}
 .bubble span{font-size:calc(var(--s) * .46);line-height:1}
 
-/* ---------- paint ---------- */
-.paint{position:absolute;inset:0;display:flex;flex-direction:column}
-.paint canvas{flex:1;min-height:0;width:100%;display:block;background:var(--paper);touch-action:none}
-.tools{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--paper);border-top:var(--edge);overflow-x:auto;flex:none}
 .sw{flex:none;width:52px;height:52px;border-radius:50%;border:4px solid var(--ink);background:var(--c);padding:0}
-.sw.on{box-shadow:0 0 0 4px var(--paper),0 0 0 8px var(--ink);transform:scale(1.05)}
-.sw.eraser{font-size:26px;line-height:1;display:grid;place-items:center}
-.sw.rainbow{background:conic-gradient(#ff4f5e,#ffc83d,#24c786,#18bfd6,#3d7bff,#9a5bff,#ff4f7b,#ff4f5e)}
 .sep{flex:none;width:3px;height:40px;background:var(--ink);border-radius:2px;opacity:.25}
 .tb{flex:none;height:52px;min-width:52px;border-radius:16px;border:3px solid var(--ink);background:var(--cloud);font-size:26px;
   display:grid;place-items:center;padding:0 10px;font-weight:900}
@@ -484,9 +477,6 @@ img,canvas{-webkit-user-drag:none}
 .sieve{width:min(100%,640px,88cqh)}
 .pot{font-size:clamp(12px,min(2vw,3.4cqh),20px)}
 .pot::before{top:auto;bottom:-.55em;right:-.45em;font-size:.62em;line-height:1;z-index:1}
-/* Paint: the palette wraps onto a second row instead of hiding off the side */
-.tools{flex-wrap:wrap;justify-content:center;overflow:visible;row-gap:8px}
-@media (max-width:600px){.tools{gap:6px;padding:8px 6px}.tools .sw{width:40px;height:40px;border-width:3px}.tools .tb{height:44px;min-width:44px;font-size:22px;padding:0 6px}.tools .sep{display:none}}
 .popgrid{min-width:min(480px,calc(100vw - 84px));grid-template-columns:repeat(auto-fill,minmax(min(96px,calc((100vw - 110px)/3)),1fr))}
 .pop{box-sizing:border-box}.popgrid{min-width:min(480px,calc(100vw - 96px))}
 /* the hidden attribute always wins (Robo's "My move" box showed on every level because a card style overrode it) */
@@ -531,11 +521,73 @@ img,canvas{-webkit-user-drag:none}
   .puzhud{top:6px;gap:6px}.puzhud .pbtn{padding:4px 12px;font-size:15px}.puzhud .pbtn.go{font-size:17px}.plv{font-size:13px;padding:4px 10px}
 }
 
-/* Magic Paint: scrollable, finger-friendly creative tool tray. */
-.paint .tools{gap:8px;scrollbar-width:thin;overscroll-behavior-x:contain;touch-action:pan-x;padding:10px 14px;min-height:76px}
-.paint .tools button{touch-action:manipulation;user-select:none;-webkit-user-select:none;flex-shrink:0}
-.paint .tools .tb{transition:background-color .12s,transform .12s}
-.paint .tools .tb.on{background:#ffd54f;box-shadow:inset 0 0 0 2px #1d1842;transform:translateY(-2px)}
-.paint .tools .tb:focus-visible,.paint .tools .sw:focus-visible{outline:4px solid #3d7bff;outline-offset:4px}
-.paint canvas{touch-action:none;user-select:none;-webkit-user-select:none}
-@media(max-width:600px){.paint .tools{gap:7px;padding:8px 10px;min-height:66px}.paint .tools .tb{min-width:46px;height:46px;font-size:23px}.paint .tools .sw{width:46px;height:46px}}
+
+/* ---------- Magic Paint ----------
+   The paper fills the stage; one slim bar of big category buttons; each category opens a pop-up menu over the paper. */
+.paint{position:absolute;inset:0;display:flex;flex-direction:column}
+.pp-board{position:relative;flex:1;min-height:0;overflow:hidden;background:#fff;touch-action:none}
+.pp-board canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+.pp-lines,.pp-guide{pointer-events:none}
+.pp-bar{flex:none;display:flex;align-items:center;justify-content:center;gap:clamp(4px,1.2vw,10px);padding:8px clamp(6px,1.5vw,14px);background:var(--paper);border-top:var(--edge)}
+.pp-b,.pp-o,.pp-tab{-webkit-touch-callout:none}
+.pp-b{flex:1 1 0;min-width:0;max-width:76px;height:clamp(50px,8.5vmin,72px);border-radius:18px;border:3px solid var(--ink);background:var(--cloud);font-size:clamp(24px,4.4vmin,34px);
+  display:grid;place-items:center;padding:0;position:relative;touch-action:manipulation;user-select:none;-webkit-user-select:none;box-shadow:0 3px 0 var(--ink);transition:transform .1s,background-color .12s}
+.pp-b:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.pp-b.on{background:var(--sun)}
+.pp-b.open{background:#ffd54f;outline:4px solid var(--sky);outline-offset:2px}
+.pp-b:focus-visible,.pp-o:focus-visible,.pp-tab:focus-visible{outline:4px solid #3d7bff;outline-offset:3px}
+.pp-gap{flex:0 1 18px}
+.pp-sw{width:62%;aspect-ratio:1;border-radius:50%;border:3px solid var(--ink);background:var(--c)}
+.pp-sw.rainbow,.pp-swatch.rainbow{background:conic-gradient(#ff4f5e,#ffc83d,#24c786,#18bfd6,#3d7bff,#9a5bff,#ff4f7b,#ff4f5e)}
+.pp-b .pp-bi{line-height:1}
+.pp-b .pp-dot{position:absolute;right:5px;bottom:5px;width:var(--d);height:var(--d);border-radius:50%;background:var(--ink);border:2px solid #fff}
+/* the menu covers part of the paper; the shade behind it catches taps so a tap outside closes it instead of painting */
+.pp-shade{position:absolute;inset:0;z-index:5;background:rgba(29,24,66,.18)}
+.pp-menu{position:absolute;z-index:6;left:10px;right:10px;bottom:10px;max-height:calc(100% - 20px);overflow-y:auto;overscroll-behavior:contain;
+  background:var(--paper);border:var(--edge);border-radius:24px;box-shadow:0 6px 0 var(--ink);padding:10px 12px 14px;animation:ppUp .16s ease-out}
+@keyframes ppUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.pp-menu h3{margin:6px 2px 8px;font-family:var(--font-display);font-weight:800;font-size:clamp(18px,2.6vw,24px);color:var(--ink)}
+.pp-menu h3 small{font-family:system-ui,sans-serif;font-size:.65em;font-weight:700;opacity:.6;margin-left:6px}
+.pp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(64px,11vmin,84px),1fr));gap:8px;margin-bottom:6px}
+.pp-o{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:clamp(64px,11vmin,84px);padding:6px 2px;border-radius:18px;
+  border:3px solid var(--ink);background:var(--cloud);touch-action:manipulation;user-select:none;-webkit-user-select:none;color:var(--ink)}
+.pp-o.on{background:var(--sun);box-shadow:inset 0 0 0 3px var(--ink)}
+.pp-oi{font-size:clamp(28px,5vmin,38px);line-height:1}
+.pp-let{font-family:var(--font-display);font-weight:800}
+.pp-ol{font-size:12px;font-weight:900;line-height:1.1;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pp-swatch{display:block;width:clamp(34px,6vmin,46px);aspect-ratio:1;border-radius:50%;border:3px solid var(--ink);background:var(--c)}
+.pp-swatch.sq{border-radius:10px}
+.pp-swatch.empty{border-style:dashed;opacity:.5;display:grid;place-items:center;font-weight:900}
+.pp-swatch.big{width:clamp(46px,8vmin,60px)}
+.pp-shp{width:clamp(34px,6vmin,46px);height:clamp(34px,6vmin,46px)}
+.pp-shp path{fill:var(--sky);stroke:var(--ink);stroke-width:5;stroke-linejoin:round}
+.pp-mix{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.pp-mix .mixin{flex:1 1 300px;margin:0}
+.pp-eq{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-weight:800;font-size:28px;color:var(--ink);padding:4px 8px}
+.pp-res{font-size:22px;min-width:3em}
+.pp-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.pp-tab{border:3px solid var(--ink);border-radius:999px;background:var(--cloud);padding:6px 14px;font-weight:900;font-size:16px;min-height:44px;color:var(--ink)}
+.pp-tab.on{background:var(--sun)}
+/* what the game says about the child's painting */
+.pp-say{position:absolute;z-index:4;left:50%;top:10px;transform:translate(-50%,-12px);opacity:0;pointer-events:none;max-width:min(640px,calc(100% - 24px));width:max-content;
+  display:block;line-height:1.25;padding:6px 16px;border-radius:999px;background:rgba(255,255,255,.94);border:3px solid var(--sc,var(--ink));
+  font-family:var(--font-display);font-weight:800;font-size:clamp(17px,2.8vw,26px);color:var(--ink);text-align:center;transition:opacity .25s,transform .25s;box-shadow:0 3px 0 var(--sc,var(--ink))}
+.pp-say.show{opacity:1;transform:translate(-50%,0)}
+.pp-say small{font-size:.7em;opacity:.75}
+.pp-big{font-size:1.6em;line-height:1;vertical-align:-.12em;margin-right:.15em;color:var(--sc,var(--ink));-webkit-text-stroke:1.5px var(--ink);paint-order:stroke fill}
+.pp-cw{color:var(--c);-webkit-text-stroke:1.2px var(--ink);paint-order:stroke fill}
+.pp-rb{background:linear-gradient(90deg,#ff4f5e,#ff8a2b,#ffc83d,#24c786,#3d7bff,#9a5bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pp-chip{display:inline-block;vertical-align:-.15em;margin-right:.3em;width:26px;height:26px;border-radius:50%;border:3px solid var(--ink);background:var(--c);flex:none}
+.pp-chip.dot{width:var(--d);height:var(--d);background:var(--ink);border:0}
+.pp-sdot{display:block;width:var(--d);height:var(--d);border-radius:50%;background:var(--ink)}
+@media (max-width:600px){.pp-bar{padding:6px 4px;gap:4px}.pp-b{border-radius:14px;border-width:2.5px}.pp-gap{flex-basis:4px}.pp-menu{left:6px;right:6px;bottom:6px;padding:8px 8px 12px}
+  .pp-grid{gap:6px}.pp-say{font-size:16px;padding:4px 12px}}
+/* a phone on its side: the bar becomes a column on the right so the paper keeps the full height */
+@media (orientation:landscape) and (max-height:540px){
+  .paint{flex-direction:row}
+  .pp-bar{flex-direction:column;border-top:0;border-left:var(--edge);padding:4px 6px;gap:4px}
+  .pp-b{flex:1 1 0;width:clamp(46px,13vh,60px);max-width:none;height:auto;min-height:0;max-height:60px;font-size:clamp(20px,6vh,28px);border-radius:14px}
+  .pp-gap{flex:0 1 6px}
+  .pp-menu{left:8px;right:8px;top:8px;bottom:8px;max-height:none}
+  .pp-say{font-size:16px;padding:4px 12px;top:6px}
+}

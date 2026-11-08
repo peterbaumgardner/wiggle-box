@@ -57,13 +57,28 @@ test.describe('@layout every game fits the screen', () => {
 });
 
 test.describe('@layout real touch input', () => {
-  test('@layout Paint: a finger stroke paints', async ({ page }) => {
+  test('@layout Paint: a finger stroke paints, and a category menu opens and picks by finger', async ({ page }) => {
     await home(page); await openGame(page, 'paint', { tap: true });
     const b = await canvasBox(page), t = await touchSession(page);
-    const before = await page.evaluate(() => { const c = [...document.querySelectorAll('#stage canvas')].find(x => x.offsetWidth); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 16) if (d[i] < 250 || d[i + 1] < 250 || d[i + 2] < 250) n++; return n; });
+    const count = () => page.evaluate(() => { const d = document.querySelector('.pp-ink'), k = d.getContext('2d').getImageData(0, 0, d.width, d.height).data; let n = 0; for (let i = 3; i < k.length; i += 16) if (k[i] > 0) n++; return n; });
+    const before = await count();
     await t.drag([[b.x + b.width * .2, b.y + b.height * .5], [b.x + b.width * .8, b.y + b.height * .5]], { steps: 12 });
-    const after = await page.evaluate(() => { const c = [...document.querySelectorAll('#stage canvas')].find(x => x.offsetWidth); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 16) if (d[i] < 250 || d[i + 1] < 250 || d[i + 2] < 250) n++; return n; });
-    expect(after).toBeGreaterThan(before + 50);
+    expect(await count()).toBeGreaterThan(before + 50);
+    // the paper keeps most of the stage
+    const share = await page.evaluate(() => { const s = document.querySelector('#stage').getBoundingClientRect(), p = document.querySelector('.pp-board').getBoundingClientRect(); return (p.width * p.height) / (s.width * s.height); });
+    expect(share).toBeGreaterThan(.8);
+    await page.locator('.pp-bar [data-cat="stamp"]').tap();
+    const opt = page.locator('.pp-menu [data-st="shape"][data-v="star"]');
+    await opt.scrollIntoViewIfNeeded(); await opt.tap();
+    await expect(page.locator('.pp-menu')).toBeHidden();
+    expect(await dbg(page, 'paint', d => d.state.tool)).toBe('stamp');
+    // a slow toddler press (held for over a second) still opens the menu
+    const c = await page.locator('.pp-bar [data-cat="color"]').boundingBox(), cdp = await page.context().newCDPSession(page);
+    const pt = [{ x: c.x + c.width / 2, y: c.y + c.height / 2, id: 0, radiusX: 4, radiusY: 4, force: 1 }];
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt });
+    await page.waitForTimeout(1200);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(page.locator('.pp-menu')).toBeVisible();
   });
 
   test('@layout Shape Sorter: a shape dragged by finger drops into its hole', async ({ page }) => {
