@@ -2,8 +2,9 @@
 import { test, expect, home, openGame, dbg, waitDbg, canvasBox, mouseDrag, pick } from './helpers.mjs';
 
 /* ---------------- Element Box ---------------- */
-const E = { SAND: 1, WATER: 2, STONE: 3, WOOD: 4, FIRE: 5, LAVA: 6, STEAM: 7, PLANT: 8, SEED: 9, ICE: 11, SNOW: 12, OIL: 13, GLASS: 16, FISH: 17, SALT: 21, SALTW: 22, ACID: 23, METAL: 24, BOOM: 26, SPARK: 27, DIRT: 32, LAMP: 34 };
-const TAB = { 1: 'powder', 21: 'powder', 32: 'powder', 12: 'powder', 9: 'powder', 26: 'powder', 2: 'liquid', 22: 'liquid', 13: 'liquid', 23: 'liquid', 6: 'liquid', 3: 'solid', 4: 'solid', 24: 'solid', 11: 'solid', 16: 'solid', 5: 'air', 7: 'air', 8: 'life', 17: 'life', 27: 'power' };
+const E = { SAND: 1, WATER: 2, STONE: 3, WOOD: 4, FIRE: 5, LAVA: 6, STEAM: 7, PLANT: 8, SEED: 9, ICE: 11, SNOW: 12, OIL: 13, GLASS: 16, FISH: 17, SALT: 21, SALTW: 22, ACID: 23, METAL: 24, BOOM: 26, SPARK: 27, DIRT: 32, LAMP: 34,
+  FUSE: 35, TNT: 36, NITRO: 37, FIREWORK: 38, THERMITE: 40, GAS: 41, LN2: 44, MERCURY: 46, MAGNET: 51, ANT: 52, IRON: 53 };
+const TAB = { 52: 'life', 36: 'boom', 1: 'powder', 21: 'powder', 32: 'powder', 12: 'powder', 9: 'powder', 26: 'powder', 2: 'liquid', 22: 'liquid', 13: 'liquid', 23: 'liquid', 6: 'liquid', 3: 'solid', 4: 'solid', 24: 'solid', 11: 'solid', 16: 'solid', 5: 'air', 7: 'air', 8: 'life', 17: 'life', 27: 'power' };
 const sandCount = (page, t) => dbg(page, 'sand', (d, G, W, t) => d.count(t), t);
 async function sandScene(page, s) { await page.locator('#scenes').click(); await page.locator(`.popitem[data-s="${s}"]`).click(); }
 async function pickEl(page, el) { await page.locator('#elbtn').click(); await page.locator(`.pop .eb-tab[data-tab="${TAB[el]}"]`).click(); await page.locator(`.pop [data-e="${el}"]`).click(); await expect(page.locator('.pop')).toHaveCount(0); }
@@ -33,7 +34,7 @@ test.describe('24 Element Box', () => {
     expect(await dbg(page, 'sand', d => d.cs)).toBe(2);
   });
 
-  test('all 24 discoveries can be made, each earns a star, and the list shows them', async ({ page }) => {
+  test('every discovery can be made, each earns a star, and the list shows them', async ({ page }) => {
     test.setTimeout(240_000);
     await home(page); await openGame(page, 'sand');
     await waitDbg(page, 'sand', d => d.found.has('stone'), { timeout: 20_000 });   // the volcano does the first one
@@ -60,6 +61,15 @@ test.describe('24 Element Box', () => {
       mud: [T(E.DIRT, .5, .9, .9, 1), T(E.WATER, .5, .8, .9, .9)],
       meltrock: [T(E.STONE, .5, .8, .9, 1), ['heat', .7, .9, 60]],
       condense: [T(E.STEAM, .5, .4, .9, .6), ['cool', .7, .5, 30]],
+      chain: [T(E.TNT, .5, .92, .58, 1), T(E.TNT, .6, .92, .68, 1), T(E.FIRE, .5, .88, .58, .92)],
+      fuse: [T(E.FUSE, .3, .97, .7, .98), T(E.TNT, .7, .92, .78, 1), T(E.FIRE, .28, .93, .31, .97)],
+      firework: [T(E.FIREWORK, .6, .97, .8, 1, .3), ['heat', .7, .99, 30]],
+      thermite: [T(E.METAL, .5, .95, .9, 1), T(E.THERMITE, .5, .9, .9, .95), T(E.FIRE, .5, .87, .9, .9)],
+      ln2: [T(E.WATER, .5, .9, .9, 1), T(E.LN2, .5, .8, .9, .85)],
+      mercury: [T(E.MERCURY, .5, .9, .9, 1), T(E.SAND, .5, .8, .9, .85, .5)],
+      nitro: [T(E.NITRO, .6, .1, .7, .12)],
+      gasboom: [T(E.GAS, .5, .6, .9, .8, .5), T(E.FIRE, .5, .78, .9, .82)],
+      magnet: [T(E.MAGNET, .7, .9, .73, 1), T(E.IRON, .6, .95, .66, 1)],
     };
     for (const [k, steps] of Object.entries(recipes)) {
       if (await dbg(page, 'sand', (d, G, W, k) => d.found.has(k), k)) continue;
@@ -73,11 +83,12 @@ test.describe('24 Element Box', () => {
     // the circuit scene: battery -> metal -> lamp lights; metal -> salt water -> metal -> boom powder
     await sandScene(page, 'circuit');
     for (const k of ['circuit', 'conduct']) await waitDbg(page, 'sand', (d, G, W, k) => d.found.has(k), { timeout: 20_000, arg: k }).catch(() => { throw new Error(`circuit scene: "${k}" not made`); });
-    expect(await dbg(page, 'sand', d => d.found.size)).toBe(24);
-    await expect(page.locator('#dcount')).toHaveText('24');
-    await expect(page.locator('#game .starn')).toHaveText('24');
+    const total = await dbg(page, 'sand', d => d.DISC.length);
+    expect(await dbg(page, 'sand', d => d.found.size)).toBe(total);
+    await expect(page.locator('#dcount')).toHaveText(String(total));
+    await expect(page.locator('#game .starn')).toHaveText(String(total));
     await page.locator('#discbtn').click();
-    await expect(page.locator('#disc li.got')).toHaveCount(24);
+    await expect(page.locator('#disc li.got')).toHaveCount(total);
     const cb = await canvasBox(page);
     await page.mouse.click(cb.x + cb.width * .8, cb.y + cb.height * .5);
     await expect(page.locator('#disc')).toBeHidden();
@@ -155,7 +166,8 @@ test.describe('24 Element Box', () => {
     const cx = () => dbg(page, 'sand', d => { let s = 0, n = 0; for (let i = 0; i < d.T.length; i++) if (d.T[i] === 1) { s += i % d.cols; n++; } return s / n / d.cols; });
     const c0 = await cx();
     await pickSize(page, 4); await pickTool(page, 'wind');
-    for (let k = 0; k < 4; k++) await mouseDrag(page, [[b.x + b.width * .3, b.y + b.height * .93], [b.x + b.width * .8, b.y + b.height * .93]], { steps: 40, delay: 20 });
+    expect(await dbg(page, 'sand', d => [d.tool, d.size, d.paused, d.speed])).toEqual(['wind', 4, false, '1×']);
+    for (let k = 0; k < 4; k++) await mouseDrag(page, [[b.x + b.width * .38, b.y + b.height * .93], [b.x + b.width * .8, b.y + b.height * .93]], { steps: 40, delay: 20 });
     await page.waitForTimeout(500);
     expect(await cx()).toBeGreaterThan(c0 + .02);
   });
@@ -163,10 +175,29 @@ test.describe('24 Element Box', () => {
   test('every world runs; winter snow stops when you leave; saves round-trip; resize keeps the floor; settled worlds go to sleep', async ({ page }) => {
     test.setTimeout(120_000);
     await home(page); await openGame(page, 'sand');
-    for (const s of ['volcano', 'garden', 'winter', 'tank', 'circuit', 'lab', 'empty']) { await sandScene(page, s); await page.waitForTimeout(1200); }
+    for (const s of ['volcano', 'garden', 'winter', 'tank', 'circuit', 'lab', 'boom', 'empty']) { await sandScene(page, s); await page.waitForTimeout(1200); }
     await sandScene(page, 'winter'); await page.waitForTimeout(300);
     await sandScene(page, 'empty'); await page.waitForTimeout(1200);
     expect(await sandCount(page, E.SNOW)).toBe(0);
+    // demolition: the lit fuse reaches the TNT and the towers come down
+    await sandScene(page, 'boom');
+    const tnt0 = await sandCount(page, E.TNT), stone0 = await sandCount(page, E.STONE);
+    await expect.poll(() => sandCount(page, E.TNT), { timeout: 40_000, intervals: [1000] }).toBeLessThan(tnt0 / 3);
+    expect(await sandCount(page, E.STONE)).toBeLessThan(stone0);
+    // explosions throw debris outward: a sand pile next to a blast spreads
+    await sandScene(page, 'empty');
+    await place(page, E.SAND, .4, .85, .6, 1);
+    await page.waitForTimeout(800);
+    const spread = () => dbg(page, 'sand', d => { let x0 = 1e9, x1 = 0; for (let i = 0; i < d.T.length; i++) if (d.T[i] === 1) { const x = i % d.cols; x0 = Math.min(x0, x); x1 = Math.max(x1, x); } return (x1 - x0) / d.cols; });
+    const w0 = await spread();
+    await place(page, E.TNT, .48, .8, .52, .85); await place(page, E.FIRE, .48, .77, .52, .8);
+    await expect.poll(spread, { timeout: 10_000 }).toBeGreaterThan(w0 + .02);
+    // ants stay under their cap
+    await pickEl(page, E.ANT); await pickSize(page, 4);
+    const b2 = await canvasBox(page);
+    for (let k = 0; k < 6; k++) await mouseDrag(page, [[b2.x + b2.width * .1, b2.y + b2.height * (.2 + k * .05)], [b2.x + b2.width * .9, b2.y + b2.height * (.2 + k * .05)]], { steps: 10 });
+    const ants = await sandCount(page, E.ANT);
+    expect(ants).toBeGreaterThan(20); expect(ants).toBeLessThanOrEqual(320);
     // a settled pile: almost every chunk sleeps
     await place(page, E.SAND, .2, .8, .8, 1);
     await page.waitForTimeout(2500);
