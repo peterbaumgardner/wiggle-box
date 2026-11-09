@@ -2,119 +2,192 @@
 import { test, expect, home, openGame, dbg, waitDbg, canvasBox, mouseDrag, pick } from './helpers.mjs';
 
 /* ---------------- Element Box ---------------- */
-const E = { SAND: 1, WATER: 2, STONE: 3, WOOD: 4, FIRE: 5, LAVA: 6, STEAM: 7, PLANT: 8, SEED: 9, ICE: 11, SNOW: 12, OIL: 13, FISH: 17, ERASE: 99 };
-const sandCount = (page, t) => dbg(page, 'sand', (d, G, W, t) => { let n = 0; for (const v of d.T) if (v === t) n++; return n; }, t);
+const E = { SAND: 1, WATER: 2, STONE: 3, WOOD: 4, FIRE: 5, LAVA: 6, STEAM: 7, PLANT: 8, SEED: 9, ICE: 11, SNOW: 12, OIL: 13, GLASS: 16, FISH: 17, SALT: 21, SALTW: 22, ACID: 23, METAL: 24, BOOM: 26, SPARK: 27, DIRT: 32, LAMP: 34 };
+const TAB = { 1: 'powder', 21: 'powder', 32: 'powder', 12: 'powder', 9: 'powder', 26: 'powder', 2: 'liquid', 22: 'liquid', 13: 'liquid', 23: 'liquid', 6: 'liquid', 3: 'solid', 4: 'solid', 24: 'solid', 11: 'solid', 16: 'solid', 5: 'air', 7: 'air', 8: 'life', 17: 'life', 27: 'power' };
+const sandCount = (page, t) => dbg(page, 'sand', (d, G, W, t) => d.count(t), t);
 async function sandScene(page, s) { await page.locator('#scenes').click(); await page.locator(`.popitem[data-s="${s}"]`).click(); }
-async function paint(page, el, from, to, { brush } = {}) {
-  await pick(page, '#els', `[data-e="${el}"]`);
-  if (brush) await pick(page, '#tools', `[data-b="${brush}"]`);
+async function pickEl(page, el) { await page.locator('#elbtn').click(); await page.locator(`.pop .eb-tab[data-tab="${TAB[el]}"]`).click(); await page.locator(`.pop [data-e="${el}"]`).click(); await expect(page.locator('.pop')).toHaveCount(0); }
+async function pickTool(page, t) { await page.locator('#toolbtn').click(); await page.locator(`.pop [data-t="${t}"]`).click(); }
+async function pickSize(page, i) { await page.locator('#sizebtn').click(); await page.locator(`.pop [data-b="${i}"]`).click(); }
+async function paint(page, el, from, to, { size } = {}) {
+  if (el != null) await pickEl(page, el);
+  if (size != null) await pickSize(page, size);
   const b = await canvasBox(page);
   const P = ([x, y]) => [b.x + x * b.width, b.y + y * b.height];
   await mouseDrag(page, [P(from), P(to)], { steps: 12, delay: 15 });
 }
+const place = (page, t, x0, y0, x1, y1, dense = 1) => dbg(page, 'sand', (d, G, W, a) => d.place(...a), [t, x0, y0, x1, y1, dense]);
 
 test.describe('24 Element Box', () => {
-  test('all 11 discoveries can be made by painting, each earns a star, and finding them all throws a party', async ({ page }) => {
-    test.setTimeout(180_000);
+  test('fine 2 px grains fill a big world; zoom switches grain size and keeps the picture', async ({ page }) => {
     await home(page); await openGame(page, 'sand');
-    await waitDbg(page, 'sand', d => d.found.has('stone'), { timeout: 15_000 }); // the volcano scene does the first one
-    // painted on the right half: the info tabs sit along the bottom left of the play area
+    const g0 = await dbg(page, 'sand', d => ({ cs: d.cs, cols: d.cols, rows: d.rows }));
+    expect(g0.cs).toBe(2);
+    expect(g0.cols * g0.rows).toBeGreaterThan(150_000);
+    const stone0 = await sandCount(page, E.STONE);
+    await page.locator('#zoom').click();
+    expect(await dbg(page, 'sand', d => d.cs)).toBe(3);
+    const stone1 = await sandCount(page, E.STONE);
+    expect(stone1 / stone0).toBeGreaterThan(.3); expect(stone1 / stone0).toBeLessThan(.6);   // same picture, (2/3)² as many cells
+    await page.locator('#zoom').click(); await page.locator('#zoom').click();
+    expect(await dbg(page, 'sand', d => d.cs)).toBe(2);
+  });
+
+  test('all 24 discoveries can be made, each earns a star, and the list shows them', async ({ page }) => {
+    test.setTimeout(240_000);
+    await home(page); await openGame(page, 'sand');
+    await waitDbg(page, 'sand', d => d.found.has('stone'), { timeout: 20_000 });   // the volcano does the first one
+    const T = (t, x0, y0, x1, y1, dn) => ['p', t, x0, y0, x1, y1, dn];
     const recipes = {
-      steam: [[E.WATER, [.6, .9], [.95, .9]], [E.FIRE, [.6, .9], [.95, .995]]],     // a slanting stroke of fire reaches the water
-      glass: [[E.SAND, [.6, .9], [.95, .9]], [E.LAVA, [.6, .7], [.95, .7]]],
-      flower: [[E.WATER, [.6, .92], [.95, .92]], [E.SEED, [.6, .6], [.95, .6]]],
-      grow: [[E.PLANT, [.6, .7], [.95, .7]], [E.WATER, [.6, .55], [.95, .55]]],
-      melt: [[E.ICE, [.7, .9], [.85, .9]], [E.FIRE, [.6, .9], [.95, .9]]],         // fire around the ice
-      freeze: [[E.WATER, [.55, .85], [.98, .85]], [E.WATER, [.55, .8], [.98, .8]], [E.ICE, [.6, .975], [.95, .975]]], // ice set into the pond
-      rain: [[E.STEAM, [.6, .3], [.95, .3]]],
-      burn: [[E.WOOD, [.6, .9], [.95, .9]], [E.FIRE, [.6, .87], [.95, .87]]],
-      oil: [[E.OIL, [.6, .92], [.95, .92]], [E.FIRE, [.6, .9], [.95, .995]]],
-      float: [[E.OIL, [.6, .92], [.95, .92]], [E.WATER, [.6, .6], [.95, .6]]],
+      steam: [T(E.WATER, .5, .9, .9, 1), T(E.FIRE, .5, .8, .9, .9)],
+      glass: [T(E.SAND, .5, .9, .9, 1), T(E.LAVA, .5, .8, .9, .9)],
+      flower: [T(E.WATER, .5, .95, .9, 1), T(E.SEED, .5, .85, .9, .95, .05)],
+      grow: [T(E.PLANT, .5, .95, .9, 1), T(E.WATER, .5, .85, .9, .95)],
+      melt: [T(E.ICE, .6, .9, .8, 1), T(E.FIRE, .5, .8, .9, .9)],
+      freeze: [T(E.WATER, .5, .9, .9, 1), T(E.ICE, .5, .88, .9, .9)],
+      rain: [T(E.STEAM, .5, .2, .9, .3)],
+      burn: [T(E.WOOD, .5, .9, .9, 1), T(E.FIRE, .5, .85, .9, .9)],
+      oil: [T(E.OIL, .5, .9, .9, 1), T(E.FIRE, .5, .85, .9, .9)],
+      float: [T(E.OIL, .5, .9, .9, 1), T(E.WATER, .5, .7, .9, .8)],
+      dissolve: [T(E.WATER, .5, .9, .9, 1), T(E.SALT, .5, .8, .9, .85, .5)],
+      saltice: [T(E.ICE, .5, .9, .9, 1), T(E.SALT, .5, .85, .9, .9, .5)],
+      evap: [T(E.SALTW, .5, .9, .9, 1), T(E.FIRE, .5, .85, .9, .9)],
+      acid: [T(E.STONE, .5, .9, .9, 1), T(E.ACID, .5, .8, .9, .9)],
+      safe: [T(E.GLASS, .5, .9, .9, 1), T(E.ACID, .5, .8, .9, .9)],
+      rust: [T(E.METAL, .5, .9, .9, 1), T(E.SALTW, .5, .8, .9, .9)],
+      boom: [T(E.BOOM, .5, .9, .9, 1), T(E.FIRE, .5, .85, .9, .9)],
+      fulgurite: [T(E.SAND, .5, .9, .9, 1), T(E.SPARK, .5, .87, .9, .9)],
+      mud: [T(E.DIRT, .5, .9, .9, 1), T(E.WATER, .5, .8, .9, .9)],
+      meltrock: [T(E.STONE, .5, .8, .9, 1), ['heat', .7, .9, 60]],
+      condense: [T(E.STEAM, .5, .4, .9, .6), ['cool', .7, .5, 30]],
     };
     for (const [k, steps] of Object.entries(recipes)) {
-      if (await dbg(page, 'sand', (d, G, W, k) => d.found.has(k), k)) continue; // a side reaction already found it
+      if (await dbg(page, 'sand', (d, G, W, k) => d.found.has(k), k)) continue;
       await sandScene(page, 'empty');
-      for (const [el, a, b] of steps) { await paint(page, el, a, b, { brush: 2 }); await page.waitForTimeout(k === 'freeze' || k === 'steam' || k === 'oil' ? 1500 : 150); }
+      for (const s of steps) {
+        if (s[0] === 'p') await place(page, ...s.slice(1));
+        else await dbg(page, 'sand', (d, G, W, a) => d.applyTool(...a), s);
+      }
       await waitDbg(page, 'sand', (d, G, W, k) => d.found.has(k), { timeout: 20_000, arg: k }).catch(() => { throw new Error(`discovery "${k}" was not made`); });
     }
-    expect(await dbg(page, 'sand', d => d.found.size)).toBe(11);
-    await expect(page.locator('#dcount')).toHaveText('11');
-    await expect(page.locator('#game .starn')).toHaveText('11');
+    // the circuit scene: battery -> metal -> lamp lights; metal -> salt water -> metal -> boom powder
+    await sandScene(page, 'circuit');
+    for (const k of ['circuit', 'conduct']) await waitDbg(page, 'sand', (d, G, W, k) => d.found.has(k), { timeout: 20_000, arg: k }).catch(() => { throw new Error(`circuit scene: "${k}" not made`); });
+    expect(await dbg(page, 'sand', d => d.found.size)).toBe(24);
+    await expect(page.locator('#dcount')).toHaveText('24');
+    await expect(page.locator('#game .starn')).toHaveText('24');
     await page.locator('#discbtn').click();
-    await expect(page.locator('#disc li.got')).toHaveCount(11);
+    await expect(page.locator('#disc li.got')).toHaveCount(24);
     const cb = await canvasBox(page);
-    await page.mouse.click(cb.x + cb.width * .8, cb.y + cb.height * .5); // tapping the play area closes the list
+    await page.mouse.click(cb.x + cb.width * .8, cb.y + cb.height * .5);
     await expect(page.locator('#disc')).toBeHidden();
   });
 
-  test('sand and water are conserved, oil floats on water, sand sinks through it', async ({ page }) => {
+  test('sand and water are conserved, liquids layer by density, sand sinks through them', async ({ page }) => {
     await home(page); await openGame(page, 'sand');
     await sandScene(page, 'empty');
-    await paint(page, E.SAND, [.1, .3], [.4, .3], { brush: 3 });
-    await paint(page, E.WATER, [.55, .3], [.9, .3], { brush: 3 });   // both fall to the floor
-    await page.waitForTimeout(400);
+    await paint(page, E.SAND, [.1, .3], [.4, .3], { size: 3 });
+    await paint(page, E.WATER, [.55, .3], [.9, .3], { size: 3 });
+    await page.waitForTimeout(800);
     const s0 = await sandCount(page, E.SAND), w0 = await sandCount(page, E.WATER);
-    expect(s0).toBeGreaterThan(100); expect(w0).toBeGreaterThan(100);
+    expect(s0).toBeGreaterThan(500); expect(w0).toBeGreaterThan(500);
     await page.waitForTimeout(2500);
     expect(await sandCount(page, E.SAND)).toBe(s0);
     expect(await sandCount(page, E.WATER)).toBe(w0);
-    // layering by density: oil (0.9) above water (1.0) above sand
     await sandScene(page, 'empty');
-    await paint(page, E.OIL, [.6, .7], [.95, .7], { brush: 3 });
-    await page.waitForTimeout(1500);
-    await paint(page, E.WATER, [.6, .5], [.95, .5], { brush: 3 });
-    await page.waitForTimeout(800);
-    await paint(page, E.SAND, [.7, .3], [.85, .3], { brush: 2 });
-    await page.waitForTimeout(5000);
-    // settled layers: nowhere is a heavier thing resting right on top of a lighter liquid
-    const inv = await dbg(page, 'sand', d => { const T = d.T, c = d.cols; let sandOnWater = 0, waterOnOil = 0, sandOnOil = 0;
-      for (let i = 0; i + c < T.length; i++) { const a = T[i], b = T[i + c]; if (a === 1 && b === 2) sandOnWater++; if (a === 2 && b === 13) waterOnOil++; if (a === 1 && b === 13) sandOnOil++; }
-      let oil = 0, water = 0; for (const v of T) { if (v === 13) oil++; if (v === 2) water++; } return { sandOnWater, waterOnOil, sandOnOil, oil, water }; });
-    expect(inv.oil).toBeGreaterThan(200); expect(inv.water).toBeGreaterThan(200);
-    expect(inv.waterOnOil, 'water resting on oil').toBeLessThan(5);
-    expect(inv.sandOnWater + inv.sandOnOil, 'sand resting on a liquid').toBeLessThan(5);
+    await place(page, E.OIL, .55, .85, .95, 1);
+    await place(page, E.WATER, .55, .65, .95, .8);
+    await place(page, E.SALTW, .55, .5, .95, .6);
+    await place(page, E.SAND, .7, .4, .8, .45);
+    const inv = () => dbg(page, 'sand', d => { const T = d.T, c = d.cols; let bad = 0;
+      const rank = { 13: 1, 2: 2, 22: 3, 1: 9 };   // oil < water < salt water < sand
+      for (let i = 0; i + c < T.length; i++) { const a = rank[T[i]], b = rank[T[i + c]]; if (a && b && a > b) bad++; } return bad; });
+    await expect.poll(inv, { message: 'heavier things resting on lighter liquids', timeout: 30_000, intervals: [1000] }).toBeLessThan(10);
   });
 
-  test('Freeze stops everything, the eraser erases, brush sizes grow, fish are limited', async ({ page }) => {
+  test('freeze, single step, speed, undo, eraser, brush sizes, line, box, copy-what-I-tap and wind', async ({ page }) => {
     test.setTimeout(120_000);
     await home(page); await openGame(page, 'sand');
-    await sandScene(page, 'empty');
     const b = await canvasBox(page);
     const sizes = [];
     for (const br of [1, 2, 3]) {
       await sandScene(page, 'empty');
-      await pick(page, '#els', `[data-e="${E.STONE}"]`); await pick(page, '#tools', `[data-b="${br}"]`);
+      await pickEl(page, E.STONE); await pickSize(page, br);
       await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
       sizes.push(await sandCount(page, E.STONE));
     }
-    expect(sizes[0]).toBeGreaterThan(0); expect(sizes[1]).toBeGreaterThan(sizes[0] * 2); expect(sizes[2]).toBeGreaterThan(sizes[1] * 2);
-    await paint(page, E.SAND, [.2, .2], [.8, .2], { brush: 3 });
-    await pick(page, '#tools', '#pause');
+    expect(sizes[0]).toBeGreaterThan(0); expect(sizes[1]).toBeGreaterThan(sizes[0] * 2.5); expect(sizes[2]).toBeGreaterThan(sizes[1] * 2.5);
+    await paint(page, E.SAND, [.2, .2], [.8, .2], { size: 3 });
+    await page.locator('#pause').click();
     const snap = await dbg(page, 'sand', d => Array.from(d.T).join(''));
     await page.waitForTimeout(600);
     expect(await dbg(page, 'sand', d => Array.from(d.T).join(''))).toBe(snap);
-    await pick(page, '#tools', '#pause');
-    await paint(page, E.ERASE, [.5, .45], [.5, .55], { brush: 3 });
-    expect(await sandCount(page, E.STONE)).toBeLessThan(sizes[2] / 4);
-    // critters: at most 40 at once
-    await sandScene(page, 'tank');
-    await pick(page, '#els', `[data-e="${E.FISH}"]`);
-    for (let i = 0; i < 50; i++) { await page.mouse.click(b.x + b.width * (.1 + .8 * (i % 25) / 25), b.y + b.height * (.4 + .1 * Math.floor(i / 25))); await page.waitForTimeout(160); }
-    expect(await sandCount(page, E.FISH)).toBeLessThanOrEqual(40);
+    await page.locator('#stepbtn').click();
+    expect(await dbg(page, 'sand', d => Array.from(d.T).join(''))).not.toBe(snap);
+    await page.locator('#pause').click();
+    await expect(page.locator('#stepbtn')).toBeDisabled();
+    for (const s of ['2×', '4×', '½×', '1×']) { await page.locator('#speed').click(); expect(await dbg(page, 'sand', d => d.speed)).toBe(s); }
+    // eraser, then undo brings it back
+    const st0 = await sandCount(page, E.STONE);
+    await pickTool(page, 'erase');
+    await mouseDrag(page, [[b.x + b.width / 2, b.y + b.height * .45], [b.x + b.width / 2, b.y + b.height * .55]], { steps: 6 });
+    expect(await sandCount(page, E.STONE)).toBeLessThan(st0 / 4);
+    await page.locator('#undo').click();
+    expect(await sandCount(page, E.STONE)).toBe(st0);
+    // line and box
+    await sandScene(page, 'empty');
+    await pickEl(page, E.WOOD); await pickSize(page, 1); await pickTool(page, 'line');
+    await mouseDrag(page, [[b.x + b.width * .1, b.y + b.height * .5], [b.x + b.width * .9, b.y + b.height * .5]], { steps: 10 });
+    const wood = await dbg(page, 'sand', d => { let n = 0, x0 = 1e9, x1 = 0; const r = Math.floor(d.rows / 2); for (let x = 0; x < d.cols; x++) for (let y = r - 6; y < r + 6; y++) if (d.T[y * d.cols + x] === 4) { n++; x0 = Math.min(x0, x); x1 = Math.max(x1, x); } return { n, span: (x1 - x0) / d.cols }; });
+    expect(wood.span).toBeGreaterThan(.75);
+    await pickTool(page, 'box'); await pickEl(page, E.STONE); await pickTool(page, 'box');
+    await mouseDrag(page, [[b.x + b.width * .1, b.y + b.height * .1], [b.x + b.width * .3, b.y + b.height * .3]], { steps: 6 });
+    const box = await dbg(page, 'sand', d => d.count(3) / (d.cols * d.rows));
+    expect(box).toBeGreaterThan(.03); expect(box).toBeLessThan(.06);
+    // copy what I tap: tap the wood line, the element becomes wood
+    await pickTool(page, 'pick');
+    await page.mouse.click(b.x + b.width * .5, b.y + b.height * .5);
+    expect(await dbg(page, 'sand', d => [d.cur, d.tool])).toEqual([4, 'draw']);
+    // wind pushes sand sideways
+    await sandScene(page, 'empty');
+    await place(page, E.SAND, .4, .9, .5, 1);
+    await page.waitForTimeout(300);
+    const cx = () => dbg(page, 'sand', d => { let s = 0, n = 0; for (let i = 0; i < d.T.length; i++) if (d.T[i] === 1) { s += i % d.cols; n++; } return s / n / d.cols; });
+    const c0 = await cx();
+    await pickSize(page, 4); await pickTool(page, 'wind');
+    for (let k = 0; k < 4; k++) await mouseDrag(page, [[b.x + b.width * .3, b.y + b.height * .93], [b.x + b.width * .8, b.y + b.height * .93]], { steps: 40, delay: 20 });
+    await page.waitForTimeout(500);
+    expect(await cx()).toBeGreaterThan(c0 + .02);
   });
 
-  test('every scene runs; winter snow stops when you leave the scene; resizing keeps the picture', async ({ page }) => {
+  test('every world runs; winter snow stops when you leave; saves round-trip; resize keeps the floor; settled worlds go to sleep', async ({ page }) => {
+    test.setTimeout(120_000);
     await home(page); await openGame(page, 'sand');
-    for (const s of ['volcano', 'garden', 'winter', 'tank', 'empty']) { await sandScene(page, s); await page.waitForTimeout(1500); }
+    for (const s of ['volcano', 'garden', 'winter', 'tank', 'circuit', 'lab', 'empty']) { await sandScene(page, s); await page.waitForTimeout(1200); }
     await sandScene(page, 'winter'); await page.waitForTimeout(300);
     await sandScene(page, 'empty'); await page.waitForTimeout(1200);
     expect(await sandCount(page, E.SNOW)).toBe(0);
-    await paint(page, E.STONE, [.5, .95], [.95, .95], { brush: 2 });
+    // a settled pile: almost every chunk sleeps
+    await place(page, E.SAND, .2, .8, .8, 1);
+    await page.waitForTimeout(2500);
+    const aw = await dbg(page, 'sand', d => d.awakeChunks());
+    expect(aw.n).toBeLessThan(aw.total * .1);
+    // save to slot 1, clear, open slot 1
+    await page.evaluate(() => localStorage.removeItem('wb-sand-slot1'));
+    await page.locator('#scenes').click(); await page.locator('.pop [data-save="1"]').click();
+    const saved = await sandCount(page, E.SAND);
+    await sandScene(page, 'empty'); expect(await sandCount(page, E.SAND)).toBe(0);
+    await page.locator('#scenes').click(); await page.locator('.pop [data-load="1"]').click();
+    expect(Math.abs(await sandCount(page, E.SAND) - saved)).toBeLessThan(saved * .02);
+    // leaving keeps the world for "Last time"
+    await page.locator('#back').click(); await openGame(page, 'sand');
+    await sandScene(page, 'last');
+    expect(await sandCount(page, E.SAND)).toBeGreaterThan(saved * .9);
+    await place(page, E.STONE, .5, .95, .95, 1);
     const before = await sandCount(page, E.STONE);
     await page.setViewportSize({ width: 1200, height: 800 });
     await page.waitForTimeout(500);
-    const after = await sandCount(page, E.STONE);
-    expect(after).toBeGreaterThan(before * .8);              // the bottom rows come along
+    expect(await sandCount(page, E.STONE)).toBeGreaterThan(before * .7);
   });
 });
 

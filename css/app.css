@@ -591,3 +591,29 @@ img,canvas{-webkit-user-drag:none}
   .pp-menu{left:8px;right:8px;top:8px;bottom:8px;max-height:none}
   .pp-say{font-size:16px;padding:4px 12px;top:6px}
 }
+
+/* ---------- Element Box: one slim bar; elements, tools, sizes and worlds open as pop-up menus ---------- */
+.eb-dock{padding:6px 8px;gap:0}
+.eb-bar{display:flex;align-items:stretch;gap:6px;overflow-x:auto;scrollbar-width:none}
+.eb-bar::-webkit-scrollbar{display:none}
+.eb-b{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:58px;min-height:54px;padding:4px 8px;border:3px solid var(--ink);border-radius:16px;
+  background:var(--cloud);font-weight:900;font-size:12px;line-height:1.1;color:var(--ink);touch-action:manipulation;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.eb-b .ti{font-size:24px;line-height:1;display:grid;place-items:center;min-height:26px}
+.eb-b.on{background:var(--sun)}
+.eb-b:disabled{opacity:.4}
+.eb-b:active:not(:disabled){transform:translateY(2px)}
+.eb-el{flex-direction:row;gap:8px;min-width:120px;padding:4px 12px 4px 6px;font-size:15px}
+.eb-el.dim .eb-sw{opacity:.4}
+.eb-sw{width:34px;height:34px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;font-size:22px;flex:none}
+.eb-gap{flex:1 0 4px}
+.eb-dot{display:inline-block;width:32px;height:32px;border-radius:50%;border:3px solid var(--ink)}
+.eb-dot.ink{background:var(--ink);border:0}
+.eb-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.eb-tab{border:3px solid var(--ink);border-radius:999px;background:var(--cloud);padding:6px 12px;font-weight:900;font-size:14px;min-height:42px;color:var(--ink)}
+.eb-tab.on{background:var(--sun)}
+.eb-mh{font-family:var(--font-display);font-weight:800;font-size:18px;margin:4px 2px 8px;color:var(--ink)}
+.eb-mh:not(:first-child){margin-top:12px}
+.popitem:disabled{opacity:.35}
+@media (max-width:600px){.eb-bar{flex-wrap:wrap;justify-content:center;overflow:visible;row-gap:6px}.eb-gap{display:none}.eb-b{flex:1 1 15%;min-width:46px;min-height:48px;padding:3px 4px;border-radius:14px}.eb-b .eb-l{font-size:10px}.eb-b .ti{font-size:20px}
+  .eb-el{min-width:0;padding:3px 8px 3px 4px}.eb-el .eb-l{font-size:12px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.eb-sw{width:28px;height:28px}}
+@media (orientation:landscape) and (max-height:540px){.eb-b{min-height:42px}.eb-b .ti{font-size:18px;min-height:20px}}
