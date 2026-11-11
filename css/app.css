@@ -128,6 +128,78 @@ button:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
 .dragging{z-index:50;transition:none!important;filter:drop-shadow(0 10px 6px rgba(29,24,66,.3))}
 .return{transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
 
+
+/* Hungry Monster 2: continuous shared-touch sandbox. Scoped to avoid changing other games. */
+.feed-v2{gap:6px;padding:8px 10px max(8px,env(safe-area-inset-bottom,0px));overflow:hidden;touch-action:none;background:linear-gradient(#e3f6ff 0%,#d4f7d8 76%,#c9efc5 100%)}
+.feed-v2 .feed-head{flex:0 0 auto;text-align:center;max-width:100%;pointer-events:none;line-height:1.12}
+.feed-v2 .feed-name{font:900 clamp(17px,3vw,26px)/1.1 var(--font-display);color:var(--ink)}
+.feed-v2 .feed-caption{font:800 clamp(13px,2.4vw,19px)/1.12 var(--font-body);min-height:1.15em;color:#58345e}
+.feed-v2 .feed-world{position:relative;flex:1 1 auto;min-height:115px;width:100%;max-width:1150px;border:3px solid #538d72;border-radius:24px;background:linear-gradient(#b9e9ff 0%,#e4f8ff 57%,#bef0bd 58%,#a9df9c 100%);overflow:hidden;isolation:isolate;touch-action:none}
+.feed-v2 .feed-sky{position:absolute;inset:0;pointer-events:none;user-select:none}
+.feed-v2 .feed-cloud{position:absolute;top:5%;left:11%;font-size:clamp(24px,5vw,48px);opacity:.82;animation:feed-float 6s ease-in-out infinite}
+.feed-v2 .feed-sun{position:absolute;right:12%;top:5%;font-size:clamp(24px,5vw,42px);animation:feed-float 7s ease-in-out infinite reverse}
+.feed-v2 .feed-monster-area{position:absolute;inset:0 22% 15%;display:grid;place-items:center;pointer-events:none}
+.feed-v2 .monster{height:min(100%,270px);width:auto;aspect-ratio:1;max-width:100%;min-height:100px;pointer-events:auto;touch-action:none;cursor:pointer;filter:drop-shadow(0 6px 0 rgba(50,80,49,.22));animation:feed-breathe 2.4s ease-in-out infinite}
+.feed-v2 .monster:focus-visible,.feed-v2 .feed-station:focus-visible{outline:4px solid #ffaf18;outline-offset:2px}
+.feed-v2 .monster .mbody{transition:background-color .12s}
+.feed-v2 .monster[data-mood="bounce"] .mbody,.feed-v2 .monster[data-mood="giggle"] .mbody{animation:feed-wobble .35s ease-in-out 2}
+.feed-v2 .monster[data-mood="sour"] .mbody{background:#e8afec}
+.feed-v2 .monster[data-mood="sour"] .mouth{height:6%;width:18%;left:41%;right:auto;border-radius:50%}
+.feed-v2 .monster[data-mood="bubble"] .mouth,.feed-v2 .monster[data-mood="magic"] .mouth{height:21%}
+.feed-v2 .monster[data-mood="crunch"] .eye{transform:scaleY(.8)}
+.feed-v2 .monster[data-mood="giggle"] .eye{transform:rotate(10deg)}
+.feed-v2 .monster[data-mood="bounce"]{animation:feed-jump .36s ease-in-out 2}
+.feed-v2 .monster .feed-cheeks{position:absolute;left:15%;right:15%;top:45%;font-size:clamp(13px,3vw,22px);text-align:center;opacity:0;pointer-events:none}
+.feed-v2 .monster.feed-reacting .feed-cheeks{opacity:1;animation:feed-shine .45s ease-in-out 2}
+.feed-v2 .feed-worktop{position:absolute;left:0;right:0;bottom:3%;height:32%;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-end;padding:0 2.5%;z-index:2}
+.feed-v2 .feed-station{pointer-events:auto;touch-action:none;border:3px solid #3e5547;background:#fff9d9dd;border-radius:20px;width:clamp(68px,15%,150px);height:100%;max-height:130px;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;box-shadow:0 4px 0 #538d72;cursor:pointer}
+.feed-v2 .feed-station-label{font:900 clamp(10px,1.6vw,15px)/1 var(--font-body);color:#344d35}
+.feed-v2 .feed-bowl-icon,.feed-v2 .feed-garden-icon{font-size:clamp(27px,6vw,64px);line-height:1.15;pointer-events:none}
+.feed-v2 .feed-count,.feed-v2 .feed-garden-count{font:800 clamp(10px,1.6vw,14px)/1.1 var(--font-body);min-height:1.1em}
+.feed-v2 .feed-station.feed-active{background:#fae0ff}
+.feed-v2 .feed-station.feed-stirring .feed-bowl-icon{animation:feed-stir .45s ease-out}
+.feed-v2 .feed-station.feed-grow .feed-garden-icon{animation:feed-jump .45s ease-out}
+.feed-v2 .feed-items,.feed-v2 .feed-sparks{position:absolute;inset:0;pointer-events:none}
+.feed-v2 .feed-items{z-index:4}
+.feed-v2 .feed-sparks{z-index:5;overflow:hidden}
+.feed-v2 .feed-food{position:absolute;left:0;top:0;transform:translate(-50%,-50%);font-size:clamp(31px,5.5vw,53px);line-height:1;display:grid;place-items:center;width:1.34em;height:1.34em;padding:0;background:#ffffffbf;border:2px solid #4b705b;border-radius:50%;pointer-events:auto;touch-action:none;cursor:grab;will-change:left,top;box-shadow:0 3px 0 #51734f}
+.feed-v2 .feed-food.feed-held{z-index:10;transform:translate(-50%,-50%) scale(1.22);box-shadow:0 8px 7px #396d4c77;cursor:grabbing}
+.feed-v2 .feed-food.feed-recipe{background:var(--recipe-color,#edb7f8);border:3px solid #72459d}
+.feed-v2 .feed-spark{position:absolute;font-size:clamp(16px,3vw,28px);animation:feed-spark-rise .75s ease-out forwards}
+.feed-v2 .feed-shelf{flex:0 0 auto;display:flex;gap:5px;align-items:center;justify-content:flex-start;overflow-x:auto;overflow-y:hidden;max-width:100%;width:min(100%,1050px);min-height:55px;padding:4px 2px 7px;overscroll-behavior-x:contain;touch-action:pan-x;scrollbar-width:thin}
+.feed-v2 .feed-source{flex:0 0 clamp(50px,6.7vw,67px);height:clamp(50px,6.7vw,67px);border:3px solid #634c70;border-radius:17px;background:#fffaf2;box-shadow:0 3px 0 #886691;font-size:clamp(27px,3.7vw,39px);line-height:1;display:grid;place-items:center;padding:0;touch-action:none;user-select:none}
+.feed-v2 .feed-source:active{background:#ffeab4;transform:translateY(2px);box-shadow:0 1px 0 #886691}
+.feed-v2 .feed-foot{flex:0 0 auto;min-height:17px;width:min(100%,1050px);display:flex;justify-content:space-between;gap:10px;font:800 clamp(11px,2vw,15px)/1.1 var(--font-body);color:#375446}
+.feed-v2 .feed-foot #feed-total{white-space:nowrap}
+@keyframes feed-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+@keyframes feed-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes feed-wobble{0%,100%{transform:rotate(0)}33%{transform:rotate(-7deg)}66%{transform:rotate(7deg)}}
+@keyframes feed-jump{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
+@keyframes feed-stir{0%,100%{transform:rotate(0)}50%{transform:rotate(35deg)}}
+@keyframes feed-shine{0%,100%{opacity:0}50%{opacity:1}}
+@keyframes feed-spark-rise{from{opacity:1;transform:translate(-50%,-50%) scale(.8)}to{opacity:0;transform:translate(calc(-50% + var(--sx)),calc(-50% + var(--sy))) scale(1.2)}}
+@media(max-height:460px){
+  .feed-v2{padding:3px 7px;gap:3px}
+  .feed-v2 .feed-head{display:flex;justify-content:center;gap:10px;align-items:center}
+  .feed-v2 .feed-world{min-height:75px}
+  .feed-v2 .feed-station{min-height:48px;border-radius:13px}
+  .feed-v2 .feed-shelf{min-height:42px;padding:1px 2px 4px}
+  .feed-v2 .feed-source{flex-basis:42px;height:42px;font-size:27px;border-radius:12px}
+  .feed-v2 .feed-foot{font-size:11px}
+}
+@media(max-width:530px) and (orientation:portrait){
+  .feed-v2 .feed-monster-area{inset:0 15% 22%}
+  .feed-v2 .monster{height:min(95%,250px)}
+  .feed-v2 .feed-worktop{height:24%;bottom:2%;padding:0 2%}
+  .feed-v2 .feed-station{width:27%;max-height:105px}
+  .feed-v2 .feed-bowl-icon,.feed-v2 .feed-garden-icon{font-size:37px}
+}
+@media(prefers-reduced-motion:reduce){
+  .feed-v2 .monster,.feed-v2 .feed-sun,.feed-v2 .feed-cloud{animation:none!important}
+  .feed-v2 .feed-spark{animation-duration:.1s}
+  .feed-v2 .monster .mbody,.feed-v2 .monster .mouth{transition:none}
+}
+
 /* ---------- shapes ---------- */
 .holes{display:flex;gap:clamp(10px,3vw,30px);justify-content:center;flex-wrap:wrap;background:var(--paper);border:var(--edge);border-radius:24px;padding:16px;width:100%}
 .hole,.piece{width:clamp(80px,14vw,140px);aspect-ratio:1;position:relative}
