@@ -200,6 +200,12 @@ button:focus-visible{outline:4px solid var(--sun);outline-offset:3px}
   .feed-v2 .monster .mbody,.feed-v2 .monster .mouth{transition:none}
 }
 
+/* On narrow portrait screens expose every ingredient without horizontal scrolling. */
+@media(max-width:530px) and (orientation:portrait){
+  .feed-v2 .feed-shelf{flex-wrap:wrap;justify-content:center;overflow:visible;max-height:123px;row-gap:4px}
+  .feed-v2 .feed-source{flex-basis:44px;height:44px;font-size:28px}
+}
+
 /* ---------- shapes ---------- */
 .holes{display:flex;gap:clamp(10px,3vw,30px);justify-content:center;flex-wrap:wrap;background:var(--paper);border:var(--edge);border-radius:24px;padding:16px;width:100%}
 .hole,.piece{width:clamp(80px,14vw,140px);aspect-ratio:1;position:relative}
