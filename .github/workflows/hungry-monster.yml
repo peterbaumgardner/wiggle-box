@@ -1,0 +1,39 @@
+name: Hungry Monster smoke tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'games/feed.js'
+      - 'css/app.css'
+      - 'tests/12-play-and-learn.spec.mjs'
+      - '.github/workflows/hungry-monster.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  hungry-monster:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - name: Test continuous and simultaneous touch interactions
+        run: npx playwright test --project=desktop --grep 'Hungry Monster'
+      - name: Stamp offline app cache
+        run: npm run stamp
+      - name: Commit stamped service worker
+        run: |
+          if ! git diff --quiet -- sw.js; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add sw.js
+            git commit -m 'chore: refresh offline cache after Hungry Monster changes'
+            git push
+          fi
