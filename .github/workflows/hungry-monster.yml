@@ -26,10 +26,12 @@ jobs:
       - run: npx playwright install chromium --with-deps
       - name: Test continuous and simultaneous touch interactions
         run: npx playwright test --project=desktop --grep 'Hungry Monster'
-      - name: Stamp offline app cache
-        run: npm run stamp
-      - name: Commit stamped service worker
+      - name: Stamp the latest offline app and commit
         run: |
+          git fetch origin main
+          git rebase origin/main
+          npm run stamp
+          npm run stamp:check
           if ! git diff --quiet -- sw.js; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
