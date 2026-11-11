@@ -299,41 +299,53 @@ test.describe('08 Magic Paint', () => {
 
 /* ---------------- Hungry Monster ---------------- */
 test.describe('09 Hungry Monster', () => {
-  test('each level: feed exactly the number asked for (taps and drags), get a star and a new round', async ({ page }) => {
-    test.setTimeout(90_000);
-    await home(page); await openGame(page, 'feed');
-    let stars = 0;
-    for (const lv of ['s', 'b', 'a']) {
-      await page.locator(`.chip[data-l="${lv}"]`).click();
-      const t = await dbg(page, 'feed', d => ({ target: d.target, a: d.a, b: d.b }));
-      if (lv === 'a') { expect(t.target).toBe(t.a + t.b); await expect(page.locator('#ask')).toContainText(`${t.a}`); }
-      await expect(page.locator('#dots i')).toHaveCount(t.target);
-      const mon = await page.locator('#mon').boundingBox();
-      for (let k = 0; k < t.target; k++) {
-        const f = page.locator('#tray .food').first(); const fb = await f.boundingBox();
-        if (k % 2) await f.click();                                  // tap: it flies into the mouth
-        else await mouseDrag(page, [[fb.x + fb.width / 2, fb.y + fb.height / 2], [mon.x + mon.width / 2, mon.y + mon.height * .6]], { steps: 10 }); // drag into the mouth
-        await page.waitForTimeout(450);
-        expect(await dbg(page, 'feed', d => d.eaten)).toBe(k + 1);
-        await expect(page.locator('#dots i.f')).toHaveCount(k + 1);
-      }
-      stars++;
-      await expect(page.locator('#game .starn')).toHaveText(String(stars), { timeout: 3000 });
-      await expect(page.locator('#ask')).toContainText('=', { timeout: 3000 }).catch(() => {});
-      await waitDbg(page, 'feed', d => d.eaten === 0 && !d.busy, { timeout: 6000 });   // a fresh round
+  test('feeding never waits for a round and accepts every food once', async ({ page }) => {
+    await home(page); await openGame(page,'feed');
+    await expect(page.locator('.feed-source')).toHaveCount(12);
+    await expect(page.locator('.chip[data-l]')).toHaveCount(0);
+    for(let i=0;i<8;i++){
+      await page.locator('.feed-source[data-ingredient="apple"]').click();
+      expect(await dbg(page,'feed',d=>d.fed)).toBe(i+1);
     }
+    expect(await dbg(page,'feed',d=>d.activePointers)).toBe(0);
+    await expect(page.locator('#feed-total')).toContainText('8');
+    await expect(page.locator('.feed-source').first()).toBeEnabled();
   });
 
-  test('food dropped anywhere but the monster goes back to the tray and is never stranded', async ({ page }) => {
-    await home(page); await openGame(page, 'feed');
-    const f = page.locator('#tray .food').first(), tray = await page.locator('#tray').boundingBox();
-    const fb = await f.boundingBox();
-    await mouseDrag(page, [[fb.x + fb.width / 2, fb.y + fb.height / 2], [10, 10]], { steps: 10 });           // far top-left corner
-    await page.waitForTimeout(500);
-    const after = await f.boundingBox();
-    expect(Math.abs(after.x - fb.x)).toBeLessThan(2); expect(Math.abs(after.y - fb.y)).toBeLessThan(2);
-    expect(after.y).toBeGreaterThanOrEqual(tray.y - 1);
-    expect(await dbg(page, 'feed', d => d.eaten)).toBe(0);
+  test('independent food actions: mix two ingredients, then plant a third', async ({ page }) => {
+    await home(page); await openGame(page,'feed');
+    const bowl=await page.locator('#feed-bowl').boundingBox();
+    const garden=await page.locator('#feed-garden').boundingBox();
+    const drop=async (name,target)=>{
+      const b=await page.locator('.feed-source[data-ingredient="'+name+'"]').boundingBox();
+      await mouseDrag(page,[[b.x+b.width/2,b.y+b.height/2],[target.x+target.width/2,target.y+target.height/2]],{steps:10});
+    };
+    await drop('apple',bowl);
+    expect(await dbg(page,'feed',d=>d.bowlItems)).toBe(1);
+    await drop('berry',bowl);
+    expect(await dbg(page,'feed',d=>d.mixed)).toBe(1);
+    expect(await dbg(page,'feed',d=>d.recipes)).toBe(1);
+    await expect(page.locator('.feed-food.feed-recipe')).toHaveCount(1);
+    await drop('carrot',garden);
+    expect(await dbg(page,'feed',d=>d.planted)).toBe(1);
+    await expect(page.locator('#feed-garden-count')).toContainText('1');
+    expect(await dbg(page,'feed',d=>d.activePointers)).toBe(0);
+  });
+
+  test('two simultaneous fingers can feed independently with no player selection', async ({ page }) => {
+    await home(page);await openGame(page,'feed');
+    const a=await page.locator('.feed-source[data-ingredient="apple"]').boundingBox();
+    const b=await page.locator('.feed-source[data-ingredient="banana"]').boundingBox();
+    const m=await page.locator('#mon').boundingBox();
+    const fromA=[a.x+a.width/2,a.y+a.height/2],fromB=[b.x+b.width/2,b.y+b.height/2];
+    const toA=[m.x+m.width*.40,m.y+m.height*.57],toB=[m.x+m.width*.60,m.y+m.height*.57];
+    const { touchSession } = await import('./helpers.mjs');
+    const touch=await touchSession(page);
+    await touch.multi([[fromA,fromB],[toA,toB]],50);
+    await expect.poll(()=>dbg(page,'feed',d=>d.fed)).toBe(2);
+    expect(await dbg(page,'feed',d=>d.simultaneous)).toBeGreaterThanOrEqual(2);
+    expect(await dbg(page,'feed',d=>d.activePointers)).toBe(0);
+    expect(await dbg(page,'feed',d=>d.looseFood)).toBe(0);
   });
 });
 
