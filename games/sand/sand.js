@@ -463,11 +463,14 @@ init(stage,g){
     set(i,t,lifeOf(t))}
   function circle(px,py,fn){const cx=px/cs,cy=py/cs,r=radius();
     for(let y=Math.max(0,(cy-r)|0);y<=Math.min(rows-1,(cy+r)|0);y++)for(let x=Math.max(0,(cx-r)|0);x<=Math.min(cols-1,(cx+r)|0);x++){if((x+.5-cx)**2+(y+.5-cy)**2>r*r+.5)continue;fn(y*cols+x,x,y)}}
+  const MAX_ANTS=300;
   const density=t=>t===SEED?.01:t===FIREWORK?.03:t===ANT?.02:t===GAS?.3:(t===SAND||t===SNOW||t===WATER||t===OIL||t===SALT||t===DIRT||t===SALTW||t===ACID||t===BOOM||t===MUD||t===NITRO||t===THERMITE||t===ASH||t===LN2||t===HONEY||t===MERCURY||t===CONCRETE||t===GRAVEL||t===IRON)?.45:t===SPARK?.25:1;
   function paintAt(px,py){
     if(cur===FISH||cur===BUG){if(critterTick>0)return;critterTick=8;const x=(px/cs)|0,y=(py/cs)|0;if(x<0||y<0||x>=cols||y>=rows)return;const i=y*cols+x;
       if(critters()>=40)return;if(T[i]===EMPTY||T[i]===WATER||T[i]===SALTW){set(i,cur,rnd()<.5?1:0);pop(1.3)}return}
-    if(cur===ANT&&tool!=='erase'){let n=0;for(let k=0;k<N;k++)if(T[k]===ANT)n++;if(n>=300)return}
+    /* ants: at most MAX_ANTS on the screen. Count every ant this dab adds, so a big brush can't overshoot the cap */
+    if(cur===ANT&&tool!=='erase'){let n=0;for(let k=0;k<N;k++)if(T[k]===ANT)n++;if(n>=MAX_ANTS)return;
+      circle(px,py,i=>{if(n>=MAX_ANTS)return;const was=T[i];put(i,ANT,density(ANT));if(T[i]===ANT&&was!==ANT)n++});return}
     const t=tool==='erase'?ERASE:cur,dn=density(t);circle(px,py,i=>put(i,t,dn))}
   function heatCool(px,py,hot){circle(px,py,(i,x,y)=>{if(rnd()>.12)return;const t=T[i];
     if(hot){if(t===ICE||t===SNOW){set(i,WATER);discover('melt',i)}else if(t===WATER){set(i,STEAM,80);discover('steam',i)}else if(t===SALTW){set(i,SALT);if(y>0&&T[i-cols]===EMPTY)set(i-cols,STEAM,80);discover('evap',i)}

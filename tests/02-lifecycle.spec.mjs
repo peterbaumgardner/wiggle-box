@@ -21,8 +21,11 @@ async function poke(page, key) {
       await page.mouse.move(b.x + b.width * .55, b.y + b.height * .5, { steps: 6 }); await page.mouse.up();
     }
   } else {
+    /* tap it where it is, like a child: locator.click() waits for the element to stop moving, and a toy that keeps
+       breathing or bobbing (Hungry Monster) never does */
     const btn = page.locator('#stage button:visible, #stage [role=button]:visible').first();
-    if (await btn.count()) await btn.click().catch(() => {});
+    const b = await btn.count() && await btn.boundingBox();
+    if (b) await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
   }
 }
 

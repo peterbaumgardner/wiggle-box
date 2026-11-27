@@ -404,8 +404,13 @@ init(stage,g){
     for(const b of sim.bodies){
       if(b.held){b.vx=0;b.vy=0}
       if(b.t.fish&&!b.held){
-        if(b.wetF>4){b.gscale=.0;const T=b.target;const dx=T.x-b.x,dy=T.y-b.y,dd=Math.hypot(dx,dy);
-          if(dd<1.5||Math.random()<.004){b.target={x:1+Math.random()*(W-2),y:clamp(b.y+(Math.random()-.5)*8,2,H-1)}}
+        if(b.wetF>4){b.gscale=.0;
+          /* swim somewhere inside the water: all of the fish under the surface beside it, and off the floor. The
+             surface moves (waves, drains, pouring), so the target is kept inside it every frame */
+          const L=sim.levelNear(b),lo=H-b.r-1,hi=L?Math.min(lo,L.level+b.r+.6):lo;
+          let T=b.target,dx=T.x-b.x,dy=T.y-b.y,dd=Math.hypot(dx,dy);
+          if(dd<1.5||Math.random()<.004)T=b.target={x:1+Math.random()*(W-2),y:b.y+(Math.random()-.5)*8};
+          T.y=clamp(T.y,hi,lo);dx=T.x-b.x;dy=T.y-b.y;dd=Math.hypot(dx,dy)||1;
           b.vx+=dx/dd*.004;b.vy+=dy/dd*.004;if(Math.abs(b.vx)>.02)b.face=b.vx>0?-1:1}
         else{b.gscale=1;if(b.y>H-b.r-.1&&Math.random()<.03){b.vy=-.25;b.vx=(Math.random()-.5)*.2;tone(300,.06,'sine',.05,0,600)}}
       }

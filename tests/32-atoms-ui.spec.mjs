@@ -40,6 +40,9 @@ test.describe('Atom Builder: building atoms by hand', () => {
     await mouseDrag(page, [at(nn.x, nn.y), at(6, geo.H - 6)], { steps: 12 });
     expect(await atom(page)).toMatchObject({ p: 2, n: 1, e: 2 });
     await expect(page.locator('#pn .fx.big')).toContainText('Helium-3');
+    // the atom and its bins never moved: the info card under the canvas keeps its height whatever it says
+    expect(await canvasBox(page)).toEqual(box);
+    expect(await dbg(page, 'atoms', d => d.atomGeo())).toEqual(geo);
   });
 
   test('isotope, ion and chemistry cards keep nuclear stability and chemistry apart', async ({ page }) => {

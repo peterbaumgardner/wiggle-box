@@ -42,7 +42,7 @@ registerGames([
   {key:'laser', title:'Laser Lab', icon:'🔦', color:'var(--grape)', age:'7+', section:'lab', order:7,
    blurb:'Bounce lasers off mirrors. Split light into a rainbow.'},
   {key:'atoms', title:'Atom Builder', icon:'⚛️', color:'var(--aqua)', age:'8+', section:'lab', order:8,
-   blurb:'Build real atoms, snap them into molecules, then make them react.', files:['games/atoms/atoms-sci.js']},
+   blurb:'Build real atoms, snap them into molecules, then make them react.', css:true, files:['games/atoms/atoms-sci.js']},
   {key:'bridge', title:'Bridge Builder', icon:'🌉', color:'var(--tang)', age:'7+', section:'lab', order:9,
    blurb:'Build with triangles. Watch the stress, then send the truck.'},
   {key:'waves', title:'Wave Lab', icon:'🌊', color:'var(--aqua)', age:'8+', section:'lab', order:10,

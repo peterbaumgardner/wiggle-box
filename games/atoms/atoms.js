@@ -111,7 +111,7 @@ init(stage,g){
       :nuc.known?`${cap(nuc.name)} is radioactive: half of it falls apart every ${nuc.halfLife}, by ${nuc.decay}.${nuc.abundance?` A little is found in nature (${nuc.abundance}%).`:''}`
       :`This nucleus is too unbalanced to hold together. It would fall apart almost instantly, if it could form at all.`;
     pn.innerHTML=`<div class="fx big hot"><span class="tag">You built</span><div class="row"><span class="elt" style="--ec:${E[3]}"><small>${p}</small><b>${E[0]}</b><small>${fmt(E[2],0)}</small></span> <b>${E[1]}</b>-${A}</div>
-        <div class="row note">${q===0?'Neutral atom':q>0?`Ion with charge +${q} (lost electrons)`:`Ion with charge ${q} (gained electrons)`} · ${nuc.stable?'stable nucleus':'unstable nucleus, it would fall apart!'}</div></div>
+        <div class="row note atoms-steady" data-longest="${atomNote(1-MAXE,false)}"><span>${atomNote(q,nuc.stable)}</span></div></div>
       <div class="fx"><span class="tag">Nucleus</span><div class="row txt">${nucTxt}</div><div class="row txt">Stable ${E[1].toLowerCase()} has ${stab.join(' or ')} neutron${stab.length>1||stab[0]!==1?'s':''}.</div>
         <div class="row note">Neutrons only change the nucleus: how heavy it is and whether it holds together. They don't change how the atom reacts.</div></div>
       <div class="fx"><span class="tag">Chemistry</span><div class="row txt">${chem.text}</div><div class="row txt">${ion.text}</div>
@@ -122,6 +122,10 @@ init(stage,g){
       <div class="fx"><span class="tag">Electron shells</span><div class="row num">${sh.join(' , ')||'none'}</div><div class="row">${S.configText(e)}</div><div class="row note">Electrons fill 1s, 2s, 2p, 3s, 3p, then 4s. A full outer shell (like a noble gas) is very stable.</div></div>
       <div class="fx"><span class="tag">Elements discovered</span><div class="ptable">${EL.slice(1).map((x,i)=>`<span class="pt ${found.has(i+1)?'got':''}" style="--ec:${x[3]}">${x[0]}</span>`).join('')}</div><div class="row note">An element counts when you build a neutral atom with a stable nucleus.</div></div>`}
   const cap=s=>s[0].toUpperCase()+s.slice(1);
+  /* the note under the atom's name. Its row always keeps room for the longest note (an invisible copy drawn by
+     atoms.css, not part of the text), so adding a particle never makes the info card taller: if it did, the canvas
+     would shrink and the particle bins would jump out from under the child's finger. */
+  const atomNote=(q,stable)=>`${q===0?'Neutral atom':q>0?`Ion with charge +${q} (lost electrons)`:`Ion with charge ${q} (gained electrons)`} · ${stable?'stable nucleus':'unstable nucleus, it would fall apart!'}`;
 
   /* ================= MOLECULE MODE ================= */
   const AR=s=>s==='H'?20:s==='Cl'?31:28;

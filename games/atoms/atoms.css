@@ -1,0 +1,7 @@
+/* Atom Builder: styles for this game only (loaded when the game opens). Every class starts with atoms-. */
+/* a row that is always as tall as its longest possible text (data-longest): the real text and an invisible copy of the
+   longest one share one grid cell, so the row's height doesn't change when the text does. The copy is CSS content,
+   so it is never read out or found in the page's text. */
+.fx .row.atoms-steady{display:grid}
+.atoms-steady>*,.atoms-steady::after{grid-area:1/1}
+.atoms-steady::after{content:attr(data-longest);visibility:hidden;pointer-events:none}

@@ -42,7 +42,9 @@ function compactBar(bar){let busy=false;
     }
     mo.takeRecords();mo.observe(bar,OPT);busy=false}
   const OPT={childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','style']};
-  const mo=new MutationObserver(()=>requestAnimationFrame(refresh));
+  /* fold right after the change, before the browser paints or handles the next tap: waiting a frame would show the
+     bar wrapped (squeezing the play area) and leave a button on screen that is about to fold away */
+  const mo=new MutationObserver(refresh);
   refresh();let rt=0;const onResize=()=>{clearTimeout(rt);rt=setTimeout(refresh,80)};addEventListener('resize',onResize);
   if(cur)cur.onEnd(()=>{removeEventListener('resize',onResize);clearTimeout(rt);mo.disconnect()});
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(refresh);
