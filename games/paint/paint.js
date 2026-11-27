@@ -431,7 +431,8 @@ init(stage,g){
     return false});
 
   board.style.background=paper;syncBar();resize();
-  g.later(()=>tell('🎨 Draw anything! Tap a colour, then paint — lots of fingers can paint at once.'),400);
+  /* the welcome waits for the fonts and the slide-in; a child who is already busy keeps their own caption */
+  g.later(()=>{if(!sayEl.textContent)tell('🎨 Draw anything! Tap a colour, then paint — lots of fingers can paint at once.')},400);
 
   /* test hook: read the picture as the child sees it (paper + ink + outlines) */
   GAMES.paint._debug={
