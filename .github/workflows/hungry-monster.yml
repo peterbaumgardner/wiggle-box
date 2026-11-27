@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'games/feed.js'
+      - 'games/feed/**'
       - 'css/app.css'
       - 'tests/12-play-and-learn.spec.mjs'
       - '.github/workflows/hungry-monster.yml'

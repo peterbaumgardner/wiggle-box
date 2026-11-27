@@ -48,7 +48,7 @@ for (const key of GAME_KEYS) {
   });
 }
 
-test('the full enter/leave/switch/reenter/reset sequence works for all 28 games in a row', async ({ page }) => {
+test('the full enter/leave/switch/reenter/reset sequence works for every game in a row', async ({ page }) => {
   test.setTimeout(240_000);
   await home(page);
   for (let i = 0; i < GAME_KEYS.length; i++) {
@@ -126,7 +126,7 @@ test('stars survive a reload; corrupt or missing storage does not break the app'
   await page.evaluate(() => { localStorage.setItem('wb-stars', 'banana'); localStorage.setItem('wb-tab', '???'); localStorage.setItem('wb-sound', '{'); });
   await page.reload();
   await expect(page.locator('#home .starn')).toHaveText('0');
-  await expect(page.locator('.tile')).toHaveCount(28);
+  await expect(page.locator('.tile')).toHaveCount(GAME_KEYS.length);
   await page.evaluate(() => localStorage.setItem('wb-stars', '-4'));
   await page.reload();
   await expect(page.locator('#home .starn')).toHaveText('0');
@@ -138,7 +138,7 @@ test('the app still works when storage throws (private mode, blocked site data)'
     Object.defineProperty(window, 'localStorage', { configurable: true, get: boom });
   });
   await page.goto('./');
-  await expect(page.locator('.tile')).toHaveCount(28);
+  await expect(page.locator('.tile')).toHaveCount(GAME_KEYS.length);
   await page.locator('.tile[data-g="forge"]').click();
   await page.waitForFunction(() => window.WiggleBox.ready === 'forge');
   await page.locator('#snd2').click();

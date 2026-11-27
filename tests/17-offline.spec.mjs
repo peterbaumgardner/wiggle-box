@@ -1,4 +1,4 @@
-// Offline play through the service worker: install, play all 28 games offline, update without mixing versions.
+// Offline play through the service worker: install, play every game offline, update without mixing versions.
 import { test, expect, home, GAME_KEYS } from './helpers.mjs';
 import { appHash, stampedVersion, missingFromShell } from '../tools/stamp-sw.mjs';
 
@@ -20,20 +20,20 @@ test('every file the page loads is in the offline list', () => {
   expect(missingFromShell()).toEqual([]);
 });
 
-test('after one visit, the home screen and all 28 games work with the network off', async ({ page, context }) => {
+test('after one visit, the home screen and every game works with the network off', async ({ page, context }) => {
   test.setTimeout(240_000);
   await home(page);
   await installed(page);
   const ver = stampedVersion();
   const keys = await cacheKeys(page);
   expect(Object.keys(keys).filter(k => k.startsWith('wigglebox-'))).toEqual([`wigglebox-${ver}`]);
-  for (const f of ['/index.html', '/app.css', '/core.js', '/app.js', '/bridge.js', '/waves.js', '/matter.min.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/maskable-512.png', '/apple-touch-icon.png'])
+  for (const f of ['/index.html', '/app.css', '/util.js', '/games.js', '/registry.js', '/app.js', '/paint.css', '/bridge.js', '/waves.js', '/matter.min.js', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/maskable-512.png', '/apple-touch-icon.png'])
     expect(keys[`wigglebox-${ver}`], f).toContain(f);
 
   await context.setOffline(true);
   await page.reload();
   await expect(page.locator('#home')).toBeVisible();
-  await expect(page.locator('.tile')).toHaveCount(28);
+  await expect(page.locator('.tile')).toHaveCount(GAME_KEYS.length);
   for (const k of GAME_KEYS) {
     await page.locator(`.tile[data-g="${k}"]`).scrollIntoViewIfNeeded();
     await page.locator(`.tile[data-g="${k}"]`).click();
@@ -46,7 +46,7 @@ test('after one visit, the home screen and all 28 games work with the network of
   // a cold start offline: a brand-new tab on the installed app
   const p2 = await context.newPage();
   await p2.goto('./');
-  await expect(p2.locator('.tile')).toHaveCount(28);
+  await expect(p2.locator('.tile')).toHaveCount(GAME_KEYS.length);
   await p2.locator('.tile[data-g="physics"]').click();
   await p2.waitForFunction(() => window.WiggleBox.ready === 'physics' && window.Matter);
   await context.setOffline(false);
@@ -72,7 +72,7 @@ test('an update replaces the whole cache at once, and a broken page from the ser
   const srv = await tempServer();
   try {
     await page.goto(srv.url);
-    await expect(page.locator('.tile')).toHaveCount(28);
+    await expect(page.locator('.tile')).toHaveCount(GAME_KEYS.length);
     await installed(page);
     const v1 = stampedVersion();
     expect(Object.keys(await cacheKeys(page))).toEqual([`wigglebox-${v1}`]);
@@ -97,7 +97,7 @@ test('an update replaces the whole cache at once, and a broken page from the ser
     await expect(page.locator('body')).toContainText('not found');
     await context.setOffline(true);
     await page.goto(srv.url);
-    await expect(page.locator('.tile')).toHaveCount(28);
+    await expect(page.locator('.tile')).toHaveCount(GAME_KEYS.length);
     await expect(page.locator('meta[name="wb-version"]')).toHaveCount(1);
     await context.setOffline(false);
   } finally { srv.stop(); }

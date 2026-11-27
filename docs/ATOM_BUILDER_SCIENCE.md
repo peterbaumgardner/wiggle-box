@@ -1,7 +1,7 @@
 # Atom Builder: the science model
 
-Everything Atom Builder says about atoms, molecules and reactions comes from `games/atoms-sci.js` (`ATOM_SCI`), a plain
-script with no drawing or DOM code. `games/atoms.js` only draws it and turns touches into actions.
+Everything Atom Builder says about atoms, molecules and reactions comes from `games/atoms/atoms-sci.js` (`ATOM_SCI`), a plain
+script with no drawing or DOM code. `games/atoms/atoms.js` only draws it and turns touches into actions.
 `tests/31-atoms-science.spec.mjs` loads that exact file in Node and checks it against reference values typed in from the
 sources below (not copied from the app), so a wrong number in the app shows up as a disagreement.
 

@@ -1,15 +1,13 @@
 /* Wiggle Box app: home screen, game sessions (open/close), keyboard and the test hook. Loaded last. */
-/* ---------- router ---------- */
-const SECTIONS=[['lab','Science Lab','🔬','Real physics and chemistry. Every lab shows the formulas live.'],['math','Math Lab','📐','Algebra, geometry, fractions, primes, chance. Drag the math around.'],
-  ['think','Think Lab','🧩','Coding, logic and puzzles that stretch your brain.'],['play','Play & Learn','🎈','For the littlest scientists.']];
+/* ---------- home screen: built from games/registry.js ---------- */
 const tileHTML=([k,v])=>`<button class="tile" data-g="${k}" style="--c:${v.c}"><span class="age">Ages ${v.age}</span><span class="ico" aria-hidden="true">${v.icon}</span><h3>${v.title}</h3><p>${v.blurb}</p></button>`;
-$('#jump').innerHTML=`<button class="jump" data-j="all">⭐ All</button>`+SECTIONS.map(([k,t,ic])=>`<button class="jump" data-j="${k}">${ic} ${t}</button>`).join('');
+$('#jump').innerHTML=`<button class="jump" data-j="all">⭐ All</button>`+SECTIONS.map(s=>`<button class="jump" data-j="${s.key}">${s.icon} ${s.title}</button>`).join('');
 let homeTab='all';try{homeTab=localStorage.getItem('wb-tab')||'all'}catch(e){}
 function setTab(k,save){homeTab=k;document.querySelectorAll('#jump .jump').forEach(b=>b.classList.toggle('on',b.dataset.j===k));document.querySelectorAll('#sections .sec').forEach(s=>s.hidden=k!=='all'&&!s.classList.contains('sec-'+k));if(save){try{localStorage.setItem('wb-tab',k)}catch(e){}$('#home').scrollTop=0}}
 $('#jump').addEventListener('click',e=>{const a=e.target.closest('[data-j]');if(!a)return;setTab(a.dataset.j,true);tone(520,.08,'sine',.1)});
-$('#sections').innerHTML=SECTIONS.map(([k,t,ic,d])=>`<section class="sec sec-${k}" id="sec-${k}"><div class="sec-h"><h2>${t}</h2><p>${d}</p></div>
-  <div class="grid grid-${k}">${Object.entries(GAMES).filter(([,v])=>(v.section||'play')===k).sort((a,b)=>(a[1].order??50)-(b[1].order??50)).map(tileHTML).join('')}</div></section>`).join('');
-setTab(SECTIONS.some(x=>x[0]===homeTab)?homeTab:'all');
+$('#sections').innerHTML=SECTIONS.map(({key:k,title:t,blurb:d})=>`<section class="sec sec-${k}" id="sec-${k}"><div class="sec-h"><h2>${t}</h2><p>${d}</p></div>
+  <div class="grid grid-${k}">${Object.entries(GAMES).filter(([,v])=>v.section===k).sort((a,b)=>a[1].order-b[1].order).map(tileHTML).join('')}</div></section>`).join('');
+setTab(SECTIONS.some(x=>x.key===homeTab)?homeTab:'all');
 let cur=null,homeScroll=0,lastTile=null;
 /* One game session. Everything a game starts (timers, frames, listeners, observers, sounds) is registered here,
    so leaving the game stops all of it, even if the child taps Back before the game has finished starting. */
@@ -33,19 +31,26 @@ function session(){
     stop(){if(!this.alive)return;this.alive=false;this.clear();frames.forEach(cancelAnimationFrame);frames.clear();loops.forEach(L=>cancelAnimationFrame(L.id));loops.clear();
       ends.splice(0).forEach(f=>{try{f()}catch(e){console.warn('cleanup',e)}});try{speechSynthesis.cancel()}catch(e){}}};
 }
+/* Open a game: show its screen at once, load its files (only the first time), then start it.
+   If the child taps Back while it loads, nothing starts. */
 function open(k){
   const G=GAMES[k];if(!G)return;
   if(cur){closePop();cur.stop();cur=null}   /* a second tap while a game is still starting: start it once, cleanly */
   homeScroll=$('#home').scrollTop;lastTile=k;$('#home').hidden=true;$('#game').hidden=false;$('#gtitle').textContent=G.title;
-  const stage=$('#stage');stage.innerHTML='';stage.className='stage'+(G.stageClass?' '+G.stageClass:'');
+  $('#game').dataset.layout=G.layout||'';
+  const stage=$('#stage');stage.className='stage'+(G.stageClass?' '+G.stageClass:'');
   const g=cur=session();
+  stage.innerHTML=typeof G.init==='function'?'':'<div class="loading">Getting the game ready…</div>';
   tone(520,.12,'triangle');tone(780,.15,'triangle',.2,.08);
   try{history.replaceState(null,'','#'+k)}catch(e){}
-  requestAnimationFrame(()=>{if(!g.alive||cur!==g)return;
-    try{G.init(stage,g)}catch(e){console.error(e);stage.innerHTML=`<div class="loading">Oops! This game got stuck. Tap ← and try again.</div>`;return}
-    stage.querySelectorAll('.dock .drow.els').forEach(compactBar);try{stage.setAttribute('tabindex','-1');stage.focus({preventScroll:true})}catch(e){}if(window.WiggleBox)WiggleBox.ready=k});
+  const oops=(e,what)=>{console.error(e);if(g.alive&&cur===g)stage.innerHTML=`<div class="loading">Oops! This game ${what}. Tap ← and try again.</div>`};
+  loadGame(k).then(()=>requestAnimationFrame(()=>{if(!g.alive||cur!==g)return;
+    stage.innerHTML='';
+    try{G.init(stage,g)}catch(e){oops(e,'got stuck');return}
+    stage.querySelectorAll('.dock .drow.els').forEach(compactBar);try{stage.setAttribute('tabindex','-1');stage.focus({preventScroll:true})}catch(e){}if(window.WiggleBox)WiggleBox.ready=k}),
+    e=>oops(e,'could not load'));
 }
-function home(){closePop();if(window.WiggleBox)WiggleBox.ready=null;if(cur){cur.stop();cur=null}$('#stage').innerHTML='';$('#game').hidden=true;$('#home').hidden=false;$('#home').scrollTop=homeScroll;tone(400,.12,'triangle');
+function home(){closePop();if(window.WiggleBox)WiggleBox.ready=null;if(cur){cur.stop();cur=null}$('#stage').innerHTML='';$('#game').dataset.layout='';$('#game').hidden=true;$('#home').hidden=false;$('#home').scrollTop=homeScroll;tone(400,.12,'triangle');
   const t=lastTile&&document.querySelector(`.tile[data-g="${lastTile}"]`);if(t)try{t.focus({preventScroll:true})}catch(e){}
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
 $('#sections').addEventListener('click',e=>{const t=e.target.closest('.tile');if(t)open(t.dataset.g)});
@@ -67,6 +72,6 @@ addEventListener('keydown',e=>{
     if(best){best.focus();best.scrollIntoView({block:'nearest',behavior:'smooth'});e.preventDefault()}}
 });
 /* read-only handle for the automated test suite: lets tests read game state; nothing here changes gameplay */
-window.WiggleBox={games:GAMES,ready:null,get current(){return cur}};
+window.WiggleBox={games:GAMES,sections:SECTIONS,ready:null,get current(){return cur},load:loadGame};
 const start=location.hash.slice(1);if(GAMES[start])open(start);
 addEventListener("hashchange",()=>{const k=location.hash.slice(1);if(GAMES[k]){if(cur)home();open(k)}else if(cur)home()});

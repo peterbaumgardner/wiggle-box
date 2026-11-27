@@ -1,11 +1,11 @@
-// Atom Builder science model, checked on its own (no browser): the exact file the app loads, games/atoms-sci.js, run in
+// Atom Builder science model, checked on its own (no browser): the exact file the app loads, games/atoms/atoms-sci.js, run in
 // Node. Reference values below are typed in from the sources named next to them, not copied from the app's tables,
 // so a wrong number in the app shows up as a disagreement here. Passing the old UI tests is not taken as proof of any of this.
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const code = readFileSync(new URL('../games/atoms-sci.js', import.meta.url), 'utf8');
+const code = readFileSync(new URL('../games/atoms/atoms-sci.js', import.meta.url), 'utf8');
 const ctx = {}; vm.createContext(ctx); vm.runInContext(code, ctx);
 const S = vm.runInContext('ATOM_SCI', ctx);
 

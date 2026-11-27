@@ -1,17 +1,32 @@
 // Every game: registered, launches, draws something, leaves cleanly, comes back cleanly.
-import { test, expect, GAME_KEYS, home, openGame, goBack } from './helpers.mjs';
+import { test, expect, GAME_KEYS, CORE_GAMES, home, openGame, goBack } from './helpers.mjs';
 
-test('registry has exactly the 28 expected games, each with a home tile', async ({ page }) => {
+test('the registry lists every game (none of the original ones lost), each with a home tile and loadable code', async ({ page }) => {
   await home(page);
+  for (const k of CORE_GAMES) expect(GAME_KEYS, k).toContain(k);
   const keys = await page.evaluate(() => Object.keys(window.WiggleBox.games));
   expect(keys.sort()).toEqual([...GAME_KEYS].sort());
   const tiles = await page.$$eval('.tile', ts => ts.map(t => t.dataset.g));
   expect(tiles.sort()).toEqual([...GAME_KEYS].sort());
   for (const k of GAME_KEYS) {
-    const g = await page.evaluate(k => { const G = window.WiggleBox.games[k]; return { t: G.title, i: typeof G.init }; }, k);
+    const g = await page.evaluate(async k => { const G = await window.WiggleBox.load(k); return { t: G.title, i: typeof G.init }; }, k);
     expect(g.i, k).toBe('function');
     expect(g.t, k).toBeTruthy();
   }
+});
+
+test.describe('a broken game', () => {
+  test.use({ serviceWorkers: 'block' });   // the offline cache would serve the file the test is blocking
+  test('a game whose file fails to load shows Oops in that game only; the home screen and other games still work', async ({ page }) => {
+    test.info().annotations.push({ type: 'allow-errors', description: 'the missing file is on purpose' });
+    await page.route(/games\/bubbles\/bubbles\.js/, r => r.fulfill({ status: 404, body: 'not found' }));
+    await home(page);
+    await page.locator('.tile[data-g="bubbles"]').click();
+    await expect(page.locator('#stage')).toContainText('could not load');
+    await goBack(page);
+    await openGame(page, 'shapes');
+    await goBack(page);
+  });
 });
 
 /* Is something actually drawn? For canvas games: count non-uniform pixels. For DOM games: count visible controls. */

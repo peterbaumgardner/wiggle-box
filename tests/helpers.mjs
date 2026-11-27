@@ -3,8 +3,13 @@ import { test as base, expect } from '@playwright/test';
 
 export { expect };
 
-/* The 28 games the app must register. */
-export const GAME_KEYS = [
+import { gameKeys } from '../tools/games.mjs';
+
+/* Every game in games/registry.js. A new game is tested automatically (launch, lifecycle, offline, layout). */
+export const GAME_KEYS = gameKeys();
+
+/* The games that existed when the registry was introduced: none of them may disappear by accident. */
+export const CORE_GAMES = [
   'atoms', 'balance', 'bridge', 'cannon', 'chance', 'circuit', 'bubbles', 'paint', 'feed', 'shapes', 'music', 'words',
   'fireworks', 'forge', 'potion', 'geo', 'graph', 'art', 'laser', 'physics', 'primes', 'puzzles', 'robo', 'sand',
   'space', 'splash', 'trace', 'waves',
