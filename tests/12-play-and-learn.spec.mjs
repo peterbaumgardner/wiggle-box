@@ -1,6 +1,6 @@
 // Games 07-13 and 27: Bubble Pop, Magic Paint, Hungry Monster, Shape Sorter, Rainbow Piano, Word Builder,
 // Firework Sky, Letter Trace. These are for the youngest children, so tests use plain taps and drags.
-import { test, expect, home, openGame, dbg, waitDbg, canvasBox, mouseDrag } from './helpers.mjs';
+import { test, expect, home, openGame, goBack, dbg, waitDbg, canvasBox, mouseDrag } from './helpers.mjs';
 
 /* ---------------- Bubble Pop ---------------- */
 test.describe('07 Bubble Pop', () => {
@@ -305,6 +305,76 @@ test.describe('08 Magic Paint', () => {
     const a = await px(page, box.x + 200, box.y + 320), b = await px(page, box.x + 200, box.y + 420);
     expect(near(a, [255, 255, 255], 20) || near(b, [255, 255, 255], 20), 'both lines painted').toBe(false);
     expect(near(a, b, 10), 'two different colours').toBe(false);
+  });
+
+  test('picture book: New paper sends the picture away into the book and leaves white paper; undo takes it back out', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page), book = () => dbg(page, 'paint', d => d.book());
+    const newPaper = async () => { await page.locator('.pp-bar [data-cat="paper"]').click(); await page.locator('.pp-menu #clr').click(); await page.locator('.pp-menu #clr').click(); };
+    // blank paper is not kept
+    await newPaper();
+    expect(await book()).toHaveLength(0);
+    await pickColor(page, '#FF4F5E');
+    await mouseDrag(page, [[box.x + 100, box.y + 150], [box.x + 300, box.y + 150]], { steps: 8 });
+    await newPaper();
+    await expect(page.locator('.pp-away')).toHaveCount(1);          // the old picture zooms away...
+    expect(near(await px(page, box.x + 200, box.y + 150), [255, 255, 255], 1)).toBe(true);   // ...leaving white paper
+    await expect(page.locator('.pp-away')).toHaveCount(0, { timeout: 3000 });
+    await expect(page.locator('.pp-say')).toContainText('book');
+    expect(await book()).toHaveLength(1);
+    // undo brings it back to the paper and out of the book (no copy left behind); redo puts it back in
+    await page.locator('#undo').click();
+    expect(near(await px(page, box.x + 200, box.y + 150), [0xFF, 0x4F, 0x5E], 8)).toBe(true);
+    expect(await book()).toHaveLength(0);
+    await page.locator('#redo').click();
+    expect(near(await px(page, box.x + 200, box.y + 150), [255, 255, 255], 1)).toBe(true);
+    expect(await book()).toHaveLength(1);
+  });
+
+  test('picture book: pictures are kept oldest first; tapping one brings it back; an untouched picture is not kept twice', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page), book = () => dbg(page, 'paint', d => d.book());
+    const newPaper = async () => { await page.locator('.pp-bar [data-cat="paper"]').click(); await page.locator('.pp-menu #clr').click(); await page.locator('.pp-menu #clr').click(); };
+    await pickColor(page, '#FF4F5E');
+    await mouseDrag(page, [[box.x + 100, box.y + 150], [box.x + 300, box.y + 150]], { steps: 8 });
+    await newPaper();
+    await pickColor(page, '#3D7BFF');
+    await mouseDrag(page, [[box.x + 100, box.y + 250], [box.x + 300, box.y + 250]], { steps: 8 });
+    await newPaper();
+    const b = await book();
+    expect(b).toHaveLength(2);
+    expect(b[0].t).toBeLessThanOrEqual(b[1].t);
+    // the book strip shows both; the oldest (red) is first
+    await page.locator('.pp-bar [data-cat="paper"]').click();
+    await expect(page.locator('.pp-book .pp-pic')).toHaveCount(2);
+    await page.locator('.pp-book .pp-pic').first().click();
+    await expect(page.locator('.pp-menu')).toBeHidden();
+    await expect.poll(async () => near(await px(page, box.x + 200, box.y + 150), [0xFF, 0x4F, 0x5E], 8)).toBe(true);
+    expect(near(await px(page, box.x + 200, box.y + 250), [255, 255, 255], 1)).toBe(true);
+    expect(await book()).toHaveLength(2);              // blank paper wasn't kept, and the red picture is still in the book
+    await newPaper();                                   // nothing changed: it's already in the book
+    expect(await book()).toHaveLength(2);
+    await page.locator('.pp-bar [data-cat="paper"]').click();
+    await page.locator('.pp-book .pp-pic').first().click();
+    await expect.poll(async () => near(await px(page, box.x + 200, box.y + 150), [0xFF, 0x4F, 0x5E], 8)).toBe(true);
+    await mouseDrag(page, [[box.x + 100, box.y + 350], [box.x + 300, box.y + 350]], { steps: 8 });
+    await newPaper();                                   // changed: the new version joins the timeline
+    expect(await book()).toHaveLength(3);
+    // picking a colouring page also sends the drawing to the book
+    await mouseDrag(page, [[box.x + 100, box.y + 150], [box.x + 300, box.y + 150]], { steps: 8 });
+    await pick(page, 'paper', '[data-page="house"]');
+    expect(await book()).toHaveLength(4);
+  });
+
+  test('picture book: the picture on the paper is still there after leaving the game and coming back', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page);
+    await pickColor(page, '#24C786');
+    await mouseDrag(page, [[box.x + 100, box.y + 150], [box.x + 300, box.y + 150]], { steps: 8 });
+    await goBack(page);
+    await openGame(page, 'paint');
+    await expect.poll(async () => near(await px(page, box.x + 200, box.y + 150), [0x24, 0xC7, 0x86], 8), { timeout: 5000 }).toBe(true);
+    expect(await dbg(page, 'paint', d => d.book())).toHaveLength(0);   // coming back is not a new picture
   });
 
   test('a stroke that leaves the paper and comes back stays one continuous line, and the picture survives a resize', async ({ page }) => {

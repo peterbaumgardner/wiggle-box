@@ -78,7 +78,7 @@ registerGames([
   {key:'fireworks', title:'Firework Sky', icon:'🎆', color:'var(--berry)', age:'2+', section:'play', order:2,
    blurb:'Tap for colors, shapes and counting fireworks'},
   {key:'paint', title:'Magic Paint', icon:'🎨', color:'var(--tang)', age:'2+', section:'play', order:3,
-   blurb:'Paint, stamp, mix colors and color in pictures', css:true, layout:'full'},
+   blurb:'Paint, stamp, mix colors and color in pictures', files:['games/paint/paint-book.js'], css:true, layout:'full'},
   {key:'feed', title:'Hungry Monster', icon:'🍎', color:'var(--grape)', age:'3+', section:'play', order:4,
    blurb:'Feed Munch, mix silly snacks, and make discoveries together.', css:true},
   {key:'shapes', title:'Shape Sorter', icon:'🔺', color:'var(--leaf)', age:'2+', section:'play', order:5,

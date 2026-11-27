@@ -86,3 +86,13 @@
   .pp-b{border-radius:14px}
   .pp-say{font-size:16px;padding:4px 12px;top:6px}
 }
+/* the picture book: a strip of finished pictures, oldest on the left, scrolled to the newest */
+.pp-book{display:flex;gap:10px;overflow-x:auto;overscroll-behavior-x:contain;touch-action:pan-x;padding:4px 2px 10px;margin-bottom:6px;scroll-snap-type:x proximity}
+.pp-pic{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px;border:3px solid var(--ink);border-radius:16px;background:var(--cloud);
+  touch-action:pan-x;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;scroll-snap-align:end;color:var(--ink)}
+.pp-pic img{display:block;height:clamp(84px,15vmin,120px);width:auto;max-width:clamp(120px,26vmin,190px);object-fit:contain;border-radius:8px;border:1px solid rgba(29,24,66,.15);pointer-events:none}
+.pp-pic span{font-size:12px;font-weight:900}
+.pp-pic:focus-visible{outline:4px solid #3d7bff;outline-offset:3px}
+.pp-empty{margin:0 2px 8px;font-weight:800;opacity:.7}
+/* the old picture flying into the book after New paper */
+.pp-away{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;transform-origin:50% 50%;border-radius:12px;box-shadow:0 8px 24px rgba(29,24,66,.35)}

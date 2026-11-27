@@ -13,7 +13,10 @@
    - stamps say what they are and count themselves (3 stars!); shape stamps tell their sides; ABC stamps give a word;
      123 stamps come with a ten-frame of dots
    - coloring pages built from named shapes (the roof is a triangle); a number page to count by coloring; letter pages
-   - symmetry words for mirror and snowflake magic; size words for brushes */
+   - symmetry words for mirror and snowflake magic; size words for brushes
+   Picture book (a timeline): New paper, or picking a colouring page, sends the drawing zooming away into the book and
+   leaves fresh white paper. The book (📄 menu) keeps every picture, oldest to newest; tapping one brings it back to keep
+   drawing on. The picture on the paper is saved too, so it is still there next time. Storage: games/paint/paint-book.js. */
 defineGame('paint',{
 init(stage,g){
   const INK='#1D1842';
@@ -271,13 +274,71 @@ init(stage,g){
   /* ---------- undo / redo (ink, paper and picture together) ---------- */
   const hist=[],future=[],MAX=16;
   function snap(){const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;c.getContext('2d').drawImage(cv,0,0);return{c,paper,page:{...page},letterI,numN,filled:new Set(filled),doneTold}}
-  function remember(){hist.push(snap());if(hist.length>MAX)hist.shift();future.length=0}
+  function remember(){hist.push(snap());if(hist.length>MAX)hist.shift();future.length=0;changed=true;saveSoon()}
   function restore(s){cx.save();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);cx.drawImage(s.c,0,0,s.c.width,s.c.height,0,0,cv.width,cv.height);cx.restore();
     const pageChanged=s.page.id!==page.id||s.letterI!==letterI||s.numN!==numN||s.paper!==paper;
     paper=s.paper;page={...s.page};letterI=s.letterI;numN=s.numN;board.style.background=paper;
     if(pageChanged){drawPage();drawGuide()}filled=new Set(s.filled);doneTold=s.doneTold}
-  function undo(){if(pts.size)return;const s=hist.pop();if(!s){buzz();return}future.push(snap());restore(s);tone(500,.1,'triangle')}
-  function redo(){if(pts.size)return;const s=future.pop();if(!s){buzz();return}hist.push(snap());restore(s);tone(650,.1,'triangle')}
+  /* Undoing a New paper brings the picture back out of the book (no copy is left behind); redoing it puts it back in. */
+  function undo(){if(pts.size)return;const s=hist.pop();if(!s){buzz();return}const f=snap();
+    if(s.archived){book.remove(s.archived);f.rearchive=true}future.push(f);restore(s);changed=true;saveSoon();tone(500,.1,'triangle')}
+  function redo(){if(pts.size)return;const s=future.pop();if(!s){buzz();return}const h=snap();
+    if(s.rearchive){const id=archive(true);if(id){h.archived=id;zoomAway()}}hist.push(h);restore(s);changed=true;saveSoon();tone(650,.1,'triangle')}
+
+  /* ---------- the picture book: a timeline of finished pictures, kept on this device ---------- */
+  const book=window.PAINT_BOOK||{add(){return Promise.resolve()},remove(){return Promise.resolve()},list(){return Promise.resolve([])},
+    get(){return Promise.resolve(null)},saveNow(){return Promise.resolve()},loadNow(){return Promise.resolve(null)},idle(){return Promise.resolve()}};
+  let openedFrom=null,changed=false,saveT=0,unsaved=false,bookURLs=[];
+  const newId=()=>'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const blobOf=(c,type='image/png',q)=>new Promise(ok=>{try{c.toBlob(b=>ok(b),type,q)}catch(e){ok(null)}});
+  function copyInk(){const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;c.getContext('2d').drawImage(cv,0,0);return c}
+  /* the picture as the child sees it (paper colour, paint, outlines), w pixels wide */
+  function composite(w){const h=Math.max(1,Math.round(w*cv.height/cv.width)),c=document.createElement('canvas');c.width=w;c.height=h;
+    const k=c.getContext('2d');k.fillStyle=paper;k.fillRect(0,0,w,h);k.drawImage(cv,0,0,w,h);k.drawImage(lv,0,0,w,h);return c}
+  function hasInk(){const n=128,c=document.createElement('canvas');c.width=n;c.height=n;const k=c.getContext('2d');k.drawImage(cv,0,0,n,n);
+    const d=k.getImageData(0,0,n,n).data;for(let i=3;i<d.length;i+=4)if(d[i])return true;return false}
+  /* everything needed to show this picture again; the canvases are copied now, encoded a moment later */
+  function pictureRec(id){const ink=copyInk(),thumb=composite(240),meta={id,t:Date.now(),paper,page:{...page},letterI,numN,filled:[...filled],doneTold,w:W,h:H};
+    return Promise.all([blobOf(ink),blobOf(thumb,'image/jpeg',.85)]).then(([inkB,thumbB])=>inkB?{...meta,ink:inkB,thumb:thumbB}:null)}
+  /* put the picture on the paper into the book; returns its id, or null when there was nothing to keep */
+  /* dirty: whether the picture changed since it came out of the book (an untouched one is already in there) */
+  function archive(dirty=changed){if(!hasInk()||(openedFrom&&!dirty))return null;const id=newId();
+    book.add(pictureRec(id)).catch(()=>tell('📕 The picture book is full','The picture book is full'));return id}
+  /* the old picture shrinks away toward the 📄 button (where the book lives), leaving fresh paper */
+  function zoomAway(){const c=composite(Math.min(cv.width,1600));c.className='pp-away';board.appendChild(c);
+    const br=board.getBoundingClientRect(),bt=$s('[data-cat="paper"]').getBoundingClientRect(),
+      dx=bt.left+bt.width/2-(br.left+br.width/2),dy=bt.top+bt.height/2-(br.top+br.height/2),
+      still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let gone=false;const done=()=>{if(!gone){gone=true;c.remove()}};
+    try{c.animate([{transform:'none',opacity:1},{transform:`translate(${dx}px,${dy}px) scale(.04)`,opacity:.35}],
+      {duration:still?150:750,easing:'cubic-bezier(.55,0,.75,.2)',fill:'forwards'}).onfinish=done}catch(e){done()}
+    g.later(done,1200);g.onEnd(done);tone(900,.35,'sine',.12,0,220)}
+  /* the picture on the paper is saved a moment after every change, and when the child leaves */
+  function saveSoon(){unsaved=true;clearTimeout(saveT);saveT=g.later(saveNow,1200)}
+  function saveNow(){if(!unsaved||!cv.width)return;unsaved=false;
+    book.saveNow(hasInk()||page.id!=='blank'||paper!=='#FFFFFF'?pictureRec('now').then(r=>r&&{...r,openedFrom,changed}):null).catch(()=>{})}
+  g.onEnd(saveNow);
+  /* draw a stored paint layer onto the paper, keeping its shape (a picture from a turned tablet is fitted, not stretched) */
+  function loadImage(blob){if(window.createImageBitmap)return createImageBitmap(blob);
+    return new Promise((ok,no)=>{const u=URL.createObjectURL(blob),im=new Image();im.onload=()=>{URL.revokeObjectURL(u);ok(im)};im.onerror=no;im.src=u})}
+  function applyRec(rec,img){paper=rec.paper;page={...rec.page};letterI=rec.letterI;numN=rec.numN;board.style.background=paper;
+    cx.save();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);
+    const k=Math.min(cv.width/img.width,cv.height/img.height),dw=img.width*k,dh=img.height*k;cx.drawImage(img,(cv.width-dw)/2,(cv.height-dh)/2,dw,dh);cx.restore();
+    drawPage();drawGuide();filled=new Set(rec.filled||[]);doneTold=!!rec.doneTold}
+  /* tap a picture in the book: the picture on the paper goes into the book first, then the old one comes back */
+  function openPicture(id){if(pts.size)return;book.get(id).then(rec=>rec&&rec.ink?loadImage(rec.ink).then(img=>{if(!g.alive||pts.size)return;
+      const dirty=changed;remember();const old=archive(dirty);if(old){hist[hist.length-1].archived=old;zoomAway()}
+      applyRec(rec,img);openedFrom=id;changed=false;saveSoon();tone(660,.15,'triangle');tone(990,.2,'triangle',.12,.1);
+      tell('📖 Here it is again! Keep drawing','Here it is again')}):null).catch(()=>buzz())}
+  /* the book in the 📄 menu: a strip of pictures, oldest on the left, scrolled to the newest */
+  function renderBook(){const el=menu.querySelector('.pp-book');if(!el)return;
+    book.list().then(list=>{if(openCat!=='paper'||!el.isConnected)return;bookURLs.forEach(u=>URL.revokeObjectURL(u));bookURLs=[];
+      const day=t=>{const d=new Date(t),n=new Date();return d.toDateString()===n.toDateString()?'Today':d.toLocaleDateString(undefined,{weekday:'short',day:'numeric'})};
+      el.innerHTML=list.length?list.map(r=>{const u=r.thumb?URL.createObjectURL(r.thumb):'';if(u)bookURLs.push(u);
+        return `<button class="pp-pic" data-pic="${r.id}" aria-label="Picture from ${day(r.t)}" title="Picture from ${day(r.t)}"><img src="${u}" alt="" draggable="false"><span>${day(r.t)}</span></button>`}).join('')
+        :'<p class="pp-empty">Your finished pictures will be kept here. Tap 🗑️ New paper when you are done with one.</p>';
+      el.scrollLeft=el.scrollWidth}).catch(()=>{})}
+  g.onEnd(()=>bookURLs.forEach(u=>URL.revokeObjectURL(u)));
 
   /* ---------- choosing things ---------- */
   function setColor(c,n,quiet){color=c;colorName=n;if(tool==='eraser')setTool(prevTool,true);syncBar();
@@ -297,7 +358,8 @@ init(stage,g){
     tell(on?'🎉 Party paint — every finger gets its own colour!':'Party paint off',on?'Every finger gets its own colour':'Party paint off')}
   function setPaper(c,n){if(pts.size)return;remember();paper=c;board.style.background=c;drawPage();drawGuide();tone(720,.12,'triangle');
     tell(c==='#1D1842'?'🌙 Night paper — try the 💡 glow pen!':`${n} paper`,`${n} paper`)}
-  function setPage(id){if(pts.size)return;remember();
+  function setPage(id){if(pts.size)return;const dirty=changed;remember();
+    {const old=archive(dirty);if(old){hist[hist.length-1].archived=old;zoomAway()}openedFrom=null}
     if(id==='abc'){letterI=page.id==='abc'?(letterI+1)%26:letterI}
     if(id==='num'){numN=page.id==='num'?numN%10+1:Math.max(1,numN||1)}
     page={id,arg:0};filled=new Set();doneTold=false;cx.save();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);cx.restore();drawPage();
@@ -309,7 +371,9 @@ init(stage,g){
     if(id==='abc'){const l=LETTERS[letterI];tell(`<span class="pp-big">${l[0]}</span> ${l[0]} is for ${l[1]} ${l[2]} <small>tap 🔤 again for the next letter</small>`,`${l[0]} is for ${l[1]}`)}
     else if(id==='num')tell(`<span class="pp-big">${numN}</span> Color ${word(numN)} ${numN===1?'dot':'dots'} and count! <small>tap 🔢 again for the next number</small>`,`Color ${word(numN)} dots and count`);
     else tell(...intro[id])}
-  function clearPaper(){if(pts.size)return;remember();cx.save();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);cx.restore();filled=new Set();doneTold=false;tone(1200,.3,'sine',.12,0,200);tell('✨ Fresh paper!','Fresh paper!')}
+  function clearPaper(){if(pts.size)return;const dirty=changed;remember();const old=archive(dirty);if(old){hist[hist.length-1].archived=old;zoomAway()}openedFrom=null;
+    cx.save();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);cx.restore();filled=new Set();doneTold=false;tone(1200,.3,'sine',.12,0,200);
+    tell(old?'✨ Fresh paper! <small>Your picture is in the 📖 book</small>':'✨ Fresh paper!',old?'Fresh paper! Your picture is in the book':'Fresh paper!')}
   function save(){const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const k=c.getContext('2d');k.fillStyle=paper;k.fillRect(0,0,c.width,c.height);k.drawImage(cv,0,0);k.drawImage(lv,0,0);
     const a=document.createElement('a');a.download='wiggle-box-art-'+Date.now()+'.png';a.href=c.toDataURL('image/png');a.click();tone(920,.15,'triangle');tell('💾 Saved your picture!','Saved!')}
   function mixPick(c,n){if(!mixA||mixB){mixA=[c,n];mixB=null}else mixB=[c,n];tone(440+MIXIN.findIndex(x=>x[1]===n)*80,.12,'triangle');
@@ -352,10 +416,11 @@ init(stage,g){
       <h3>💬 Helpers</h3><div class="pp-grid">${opt('data-words',`<span class="pp-oi">💬</span><span class="pp-ol">Words ${words?'on':'off'}</span>`,words,'Words on screen')}
       ${opt('data-talk',`<span class="pp-oi">🗣️</span><span class="pp-ol">Talk ${talk?'on':'off'}</span>`,talk,'Talk out loud')}</div>
       <h3>👫 Painting together</h3><div class="pp-grid">${opt('data-party',`<span class="pp-oi">🎉</span><span class="pp-ol">Party ${partyPaint?'on':'off'}</span>`,partyPaint,'Every finger gets its own colour')}</div>`}
-    else if(c==='paper'){h=`<h3>🖼️ Pictures to color</h3><div class="pp-grid">${PAGES.map(([k,i,n])=>opt(`data-page="${k}"`,`<span class="pp-oi">${i}</span><span class="pp-ol">${k==='abc'&&page.id==='abc'?'Next letter':k==='num'&&page.id==='num'?'Next number':n}</span>`,page.id===k,n)).join('')}</div>
+    else if(c==='paper'){h=`<h3>📖 My picture book <small>tap one to keep drawing on it</small></h3><div class="pp-book" role="group" aria-label="My picture book"></div>
+      <h3>🖼️ Pictures to color</h3><div class="pp-grid">${PAGES.map(([k,i,n])=>opt(`data-page="${k}"`,`<span class="pp-oi">${i}</span><span class="pp-ol">${k==='abc'&&page.id==='abc'?'Next letter':k==='num'&&page.id==='num'?'Next number':n}</span>`,page.id===k,n)).join('')}</div>
       <h3>📄 Paper color</h3><div class="pp-grid">${PAPERS.map(([v,n])=>opt(`data-paper="${v}" data-n="${n}"`,`<span class="pp-swatch sq" style="--c:${v}"></span><span class="pp-ol">${n}</span>`,paper===v,n+' paper')).join('')}</div>
       <div class="pp-grid">${opt('id="clr"',`<span class="pp-oi">🗑️</span><span class="pp-ol">${clrArm?'Tap again!':'New paper'}</span>`,clrArm,'New paper')}${opt('id="save"','<span class="pp-oi">💾</span><span class="pp-ol">Save</span>',false,'Save picture')}</div>`}
-    menu.innerHTML=h}
+    menu.innerHTML=h;if(c==='paper')renderBook()}
   function shapeSVG(k){const p={circle:'M0-40A40 40 0 1 1 0 40A40 40 0 1 1 0-40Z',square:'M-36-36H36V36H-36Z',triangle:'M0-38L42 36H-42Z',rectangle:'M-44-26H44V26H-44Z',
     diamond:'M0-44L36 0L0 44L-36 0Z',oval:'M0-28A44 28 0 1 1 0 28A44 28 0 1 1 0-28Z',heart:'M0 34C-56 0-36-48 0-18C36-48 56 0 0 34Z',
     star:Array.from({length:10},(_,i)=>{const r=i%2?17:44,a=-Math.PI/2+i*Math.PI/5;return(i?'L':'M')+(r*Math.cos(a)).toFixed(1)+' '+(r*Math.sin(a)).toFixed(1)}).join('')+'Z',
@@ -392,7 +457,8 @@ init(stage,g){
     else if(D_.page){setPage(D_.page);closeMenu()}
     else if(D_.paper){setPaper(D_.paper,D_.n);closeMenu()}
     else if(b.id==='clr'){if(!clrArm){clrArm=true;renderMenu();tone(500,.1,'triangle');clearTimeout(clrT);clrT=g.later(()=>{clrArm=false;if(openCat==='paper')renderMenu()},3000)}else{clrArm=false;clearPaper();closeMenu()}}
-    else if(b.id==='save'){save();closeMenu()}});
+    else if(b.id==='save'){save();closeMenu()}
+    else if(D_.pic){openPicture(D_.pic);closeMenu()}});
 
   /* ---------- touch input ---------- */
   const pos=e=>{const r=board.getBoundingClientRect();return[Math.max(0,Math.min(W,e.clientX-r.left)),Math.max(0,Math.min(H,e.clientY-r.top))]};
@@ -414,7 +480,7 @@ init(stage,g){
     if(kind==='stamp')stampAt(x,y,brush);else dab(x,y,brush)});
   cv.addEventListener('pointermove',e=>{if(pts.has(e.pointerId)){e.preventDefault();movePoint(e)}});
   const end=e=>{const p=pts.get(e.pointerId);if(!p)return;if(e.type==='pointerup')movePoint(e);pts.delete(e.pointerId);
-    if(p.kind==='draw'&&p.brush.tool!=='eraser'&&e.type!=='pointercancel')describe(p.path,p.brush)};
+    saveSoon();if(p.kind==='draw'&&p.brush.tool!=='eraser'&&e.type!=='pointercancel')describe(p.path,p.brush)};
   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);cv.addEventListener('lostpointercapture',end);
   g.onEnd(()=>{pts.clear();try{speechSynthesis.cancel()}catch(e){}});
 
@@ -431,6 +497,10 @@ init(stage,g){
     return false});
 
   board.style.background=paper;syncBar();resize();
+  /* the picture from last time comes back; if the child already started a new one, the old one goes into the book */
+  book.loadNow().then(rec=>{if(!rec||!rec.ink||!g.alive)return;
+    if(hist.length||pts.size){book.add({...rec,id:newId(),t:Date.now()-1});return}
+    return loadImage(rec.ink).then(img=>{if(!g.alive||hist.length||pts.size)return;applyRec(rec,img);openedFrom=rec.openedFrom||null;changed=!!rec.changed})}).catch(()=>{});
   /* the welcome waits for the fonts and the slide-in; a child who is already busy keeps their own caption */
   g.later(()=>{if(!sayEl.textContent)tell('🎨 Draw anything! Tap a colour, then paint — lots of fingers can paint at once.')},400);
 
@@ -444,5 +514,8 @@ init(stage,g){
       for(let y=2;y<H;y+=3)for(let x=2;x<W;x+=3){const k=partAt(x,y);if(k===i&&lx.getImageData(Math.floor(x*D),Math.floor(y*D),1,1).data[3]===0)own.push([x,y])}
       if(!own.length)return{name:p.name,count:p.count,pt:null};const mx=own.reduce((a,q)=>a+q[0],0)/own.length,my=own.reduce((a,q)=>a+q[1],0)/own.length;
       own.sort((a,b)=>Math.hypot(a[0]-mx,a[1]-my)-Math.hypot(b[0]-mx,b[1]-my));return{name:p.name,count:p.count,pt:own[0]}})},
-    get W(){return W},get H(){return H}};
+    get W(){return W},get H(){return H},
+    /* the picture book, oldest first, once every save has finished */
+    book(){return book.idle().then(()=>book.list()).then(l=>l.map(r=>({id:r.id,t:r.t,page:r.page.id,paper:r.paper})))},
+    flush(){saveNow();return book.idle()}};
 }});
