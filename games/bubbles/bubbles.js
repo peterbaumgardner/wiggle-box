@@ -15,21 +15,23 @@ init(stage,g){
     el.style.cssText=`width:${s}px;height:${s}px;--s:${s}px;--h:${rint(0,360)}`;el.innerHTML=`<span>${label}</span>`;
     const b={el,s,x:Math.random()*(W-s),y:H+10,vy:45+Math.random()*45,ph:Math.random()*6,amp:10+Math.random()*20,speak,show,hue:el.style.getPropertyValue('--h')};
     el.addEventListener('pointerdown',e=>{e.preventDefault();popB(b,e.clientX,e.clientY)});
-    stage.appendChild(el);bubs.push(b);
+    place(b);stage.appendChild(el);bubs.push(b);
   }
   function popB(b,x,y){
     const i=bubs.indexOf(b);if(i<0)return;bubs.splice(i,1);b.el.remove();
     pop(.8+Math.random()*.6);burst(x,y,26,[`hsl(${b.hue},90%,60%)`,'#fff','#FFC83D'],7);say(b.speak);floaty(stage,x,y,b.show);
     if(++pops%10===0){g.later(()=>{cheer();addStar();party();say('Ten pops! You got a star!')},700)}
   }
+  /* a bubble is placed the moment it exists, not one frame later (it used to flash in the top-left corner) */
+  function place(b){b.el.style.transform=`translate(${b.x+Math.sin(b.ph)*b.amp}px,${b.y}px)`}
   function frame(t){
     const dt=Math.min((t-last)/1000,.05);last=t;spawnIn-=dt;
     if(spawnIn<=0&&bubs.length<8){spawn();spawnIn=.9+Math.random()*.6}
-    for(const b of bubs.slice()){b.y-=b.vy*dt;b.ph+=dt*1.6;const x=b.x+Math.sin(b.ph)*b.amp;b.el.style.transform=`translate(${x}px,${b.y}px)`;
+    for(const b of bubs.slice()){b.y-=b.vy*dt;b.ph+=dt*1.6;place(b);
       if(b.y<-b.s-10){bubs.splice(bubs.indexOf(b),1);b.el.remove()}}
     g.raf(frame);
   }
-  for(let k=0;k<3;k++){spawn();const b=bubs[bubs.length-1];b.y=stage.clientHeight*(.35+k*.2)}
+  for(let k=0;k<3;k++){spawn();const b=bubs[bubs.length-1];b.y=stage.clientHeight*(.35+k*.2);place(b)}
   GAMES.bubbles._debug={get bubs(){return bubs},get pops(){return pops}};
   g.raf(frame);
   /* keyboard: type the letter or number you see, or Space to pop the nearest bubble */
