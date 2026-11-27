@@ -78,3 +78,17 @@ npm run test:game -- "launch, render, exit and reenter: <key>"
 ```
 
 New games are picked up automatically by the launch, lifecycle, offline and layout tests.
+
+## 6. Each game's README
+
+Every game folder has a `README.md`: what the game is, how it plays, a code map, what's done (with the tests that prove
+it), how it behaves with several children at once, its history, what isn't done, and rules to keep. Read it before you
+change the game and update it in the same commit. `npm run check` fails if a game has no README.
+
+Gaps that apply to every game (not repeated in each README):
+- **Spoken words are off.** `say()` does nothing while `VOICE=false` in `js/sound.js`. Captions and labels show on
+  screen; Magic Paint has its own Talk switch.
+- **Never tested on real devices.** All tests run in headless Chromium with emulated touch; no Safari/iPad, Firefox or
+  physical touchscreen runs (`WIGGLE_BOX_TEST_REPORT.md` › Known limits).
+- **Styles.** Except Magic Paint, Hungry Monster, Element Box and Atom Builder, a game's styles are still in the shared
+  `css/app.css`. Move them into the game's own CSS file when you work on that game.

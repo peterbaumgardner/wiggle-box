@@ -13,7 +13,8 @@ Open it in Chrome, Edge or Safari and install it (address-bar install icon, "Ins
 index.html                 the page: home screen markup and the platform scripts
 games/registry.js          THE GAME LIST: one line per game (title, icon, section...). The home screen is built from it.
 games/<key>/<key>.js       one folder per game: its code ...
-games/<key>/<key>.css      ... and its own styles (when the registry line says css:true)
+games/<key>/<key>.css      ... its own styles (when the registry line says css:true)
+games/<key>/README.md      ... and its notes: what it is, what is done and not done. Read it before changing the game.
 games/_template/           the starting point for a new game (a working multi-touch sample, its styles, its tests)
 js/                        the platform every game shares (see js/README.md):
   util.js  sound.js  effects.js  input.js  ui.js  data.js   helpers: maths, sound, stars and confetti, touch, toolbars

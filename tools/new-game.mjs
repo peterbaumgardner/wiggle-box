@@ -1,7 +1,7 @@
 // Make a new game from games/_template and add it to the home screen.
 // Usage: npm run new-game -- <key> "Game Title" [--section play|lab|math|think] [--icon 🦄] [--age 3+] [--blurb "..."]
 //   e.g. npm run new-game -- bugs "Bug Hunt" --section play --icon 🐞 --age 3+
-// Creates games/<key>/<key>.js, games/<key>/<key>.css and tests/games/<key>.spec.mjs, adds a line to games/registry.js
+// Creates games/<key>/<key>.js, <key>.css, README.md and tests/games/<key>.spec.mjs, adds a line to games/registry.js
 // and refreshes the offline cache list. Then open index.html#<key> to play it.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -25,6 +25,7 @@ const tpl = f => fill(readFileSync(join(root, 'games/_template', f), 'utf8'));
 mkdirSync(join(root, 'games', key));
 writeFileSync(join(root, 'games', key, key + '.js'), tpl('game.js'));
 writeFileSync(join(root, 'games', key, key + '.css'), tpl('game.css'));
+writeFileSync(join(root, 'games', key, 'README.md'), tpl('README.md'));
 mkdirSync(join(root, 'tests/games'), { recursive: true });
 writeFileSync(join(root, 'tests/games', key + '.spec.mjs'), tpl('game.spec.mjs'));
 
@@ -39,6 +40,7 @@ console.log(`
 Made "${title}":
   games/${key}/${key}.js         the game (a working multi-touch sample to change)
   games/${key}/${key}.css        its styles
+  games/${key}/README.md         what the game is, what's done and not done (keep it current)
   tests/games/${key}.spec.mjs    its tests
   games/registry.js            its home-screen tile (edit icon, colour, age, blurb there)
 Play it:   npm run serve   then open http://127.0.0.1:4173/#${key}

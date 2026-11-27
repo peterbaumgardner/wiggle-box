@@ -1,5 +1,5 @@
 // Fast health check, no browser needed (a few seconds). Run: npm run check
-//   - every registry entry is complete and its files exist
+//   - every registry entry is complete, its files exist and it has a README.md
 //   - every game file calls defineGame('<its key>', {init(stage, g){...}}) and parses
 //   - every game folder is in the registry (nothing forgotten), every platform script parses
 //   - the offline cache list and version in sw.js are up to date
@@ -33,6 +33,7 @@ for (const g of reg.games) {
       if (!new RegExp(`defineGame\\(\\s*['"]${g.key}['"]`).test(src)) bad(main, `must call defineGame('${g.key}', {init(stage, g){...}})`);
     }
   }
+  if (!exists(`games/${g.key}/README.md`)) bad(at, `games/${g.key}/README.md is missing (what the game is, what's done, what isn't)`);
   if (!g.css && exists(`games/${g.key}/${g.key}.css`)) bad(at, `games/${g.key}/${g.key}.css exists but the entry has no css:true, so it never loads`);
   for (const f of g.files) if (f.endsWith('.js') && f !== main && exists(f)) parses(f);
 }
