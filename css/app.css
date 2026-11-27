@@ -525,3 +525,20 @@ img,canvas{-webkit-user-drag:none}
 
 
 .popitem:disabled{opacity:.35}
+
+/* ---------- layout:'full' (set in games/registry.js): a slim header and a stage that reaches the edges ----------
+   For games that need every pixel (Magic Paint). Portrait: a short top bar. Landscape: the header becomes a narrow
+   column on the left, so the game keeps the whole height. */
+#game[data-layout=full] .gbar{padding-block:max(6px,env(safe-area-inset-top,0px)) 6px;gap:8px}
+#game[data-layout=full] .back{width:48px;height:48px;font-size:26px;box-shadow:0 3px 0 var(--ink)}
+#game[data-layout=full] .gtitle{font-size:clamp(20px,3vw,28px);text-shadow:0 3px 0 var(--ink)}
+#game[data-layout=full] .snd2{width:44px;height:44px;font-size:20px}
+#game[data-layout=full] .gbar .pill{padding:3px 12px;font-size:18px;box-shadow:0 3px 0 var(--ink)}
+#game[data-layout=full] .stage{margin:0 max(6px,env(safe-area-inset-right,0px)) max(6px,env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));border-width:3px;border-radius:20px}
+@media (orientation:landscape){
+  #game[data-layout=full]{flex-direction:row}
+  #game[data-layout=full] .gbar{flex-direction:column;justify-content:flex-start;padding:max(6px,env(safe-area-inset-top,0px)) 4px 6px max(6px,env(safe-area-inset-left,0px))}
+  #game[data-layout=full] .gtitle{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  #game[data-layout=full] .gbar .pill{padding:3px 8px;font-size:16px}
+  #game[data-layout=full] .stage{margin:6px max(6px,env(safe-area-inset-right,0px)) max(6px,env(safe-area-inset-bottom,0px)) 0}
+}

@@ -23,6 +23,7 @@ init(stage,g){
   stage.innerHTML=`<div class="__KEY__">
     <canvas class="__KEY__-cv" aria-label="__TITLE__ play area"></canvas>
     <div class="__KEY__-score" aria-live="polite">Touch with lots of fingers!</div>
+    <button class="__KEY__-btn" aria-label="More stars">✨ More stars</button>
   </div>`;
   const cv=stage.querySelector('.__KEY__-cv'),ctx=cv.getContext('2d'),scoreEl=stage.querySelector('.__KEY__-score');
 
@@ -51,6 +52,15 @@ init(stage,g){
       if(popped%10===0)win(stage,undefined,undefined,`⭐ ${popped}!`);
       g.later(add,600)}}
   }
+
+  /* A button for little hands: act when the finger lifts on it, however long it was pressed (a toddler's slow press is a
+     long press, and browsers send no click after one). Keyboard Enter/Space still arrive as a click with detail 0. */
+  const btn=stage.querySelector('.__KEY__-btn');let downOn=null;
+  btn.addEventListener('pointerdown',()=>{downOn=btn});
+  btn.addEventListener('pointerup',()=>{if(downOn===btn)moreStars();downOn=null});
+  btn.addEventListener('pointercancel',()=>{downOn=null});
+  btn.addEventListener('click',e=>{if(e.detail===0)moreStars()});
+  function moreStars(){for(let i=0;i<5;i++)add();tone(880,.12,'triangle');tone(1320,.12,'triangle',.15,.08)}
 
   /* draw every frame */
   g.loop(()=>{

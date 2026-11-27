@@ -1,6 +1,7 @@
 # Wiggle Box
 
-28 touchscreen games for curious kids: physics, chemistry, math and puzzles, with the real formulas built into the play.
+Touchscreen games for curious kids: painting, physics, chemistry, math and puzzles. Every game is built for several
+children touching the screen at once.
 
 **Play:** https://peterbaumgardner.github.io/wiggle-box/
 
@@ -9,28 +10,56 @@ Open it in Chrome, Edge or Safari and install it (address-bar install icon, "Ins
 ## How the code is laid out
 
 ```
-index.html          the page: home screen markup and the list of scripts
-css/app.css         all styles
-js/core.js          shared helpers: sound, effects, touch/drag input, the lab shell and info tabs
-js/data.js          shared word and picture lists
-games/<game>.js     one file per game (28): atoms, balance, bridge, cannon, chance, circuit, bubbles, paint, feed,
-                    shapes, music, words, fireworks, forge, potion, geo, graph, art, laser, physics, primes,
-                    puzzles, robo, sand, space, splash, trace, waves
-games/atoms-sci.js  Atom Builder's science model (no drawing; loaded before games/atoms.js). See docs/ATOM_BUILDER_SCIENCE.md
-js/app.js           home screen, opening and closing games, keyboard, test hook (loaded last)
-sw.js               offline cache
+index.html                 the page: home screen markup and the platform scripts
+games/registry.js          THE GAME LIST: one line per game (title, icon, section...). The home screen is built from it.
+games/<key>/<key>.js       one folder per game: its code ...
+games/<key>/<key>.css      ... and its own styles (when the registry line says css:true)
+games/_template/           the starting point for a new game (a working multi-touch sample, its styles, its tests)
+js/                        the platform every game shares (see js/README.md):
+  util.js  sound.js  effects.js  input.js  ui.js  data.js   helpers: maths, sound, stars and confetti, touch, toolbars
+  games.js                 the registry and the loader that fetches a game's files when it opens
+  app.js                   home screen, opening and closing games, keyboard, test hook (loaded last)
+css/app.css                shared styles (layout, home screen, game shell, lab shell, toolbars)
+sw.js                      offline cache (its file list is generated, see npm run stamp)
+tools/                     new-game, check, stamp
+tests/                     browser tests; tests/games/<key>.spec.mjs for games made from the template
 ```
 
-Each game file adds itself to `GAMES` with a title, icon, home-screen section and an `init(stage, g)` function that
-builds the game inside `stage`. `g` is the game's session: use `g.later`, `g.loop`, `g.listen` and `g.onEnd` so
-everything stops when the child leaves the game.
+A game's files load only when a child opens it. A mistake in one game shows "Oops" in that game; the home screen and
+every other game keep working.
 
-No build step: plain scripts, loaded in order. To fix a game, edit its file in `games/`, then:
+## Everyday commands
+
+No build step: plain files, any static web server.
 
 ```
-npm run stamp      # gives the offline cache a new version so devices pick up the change
-npm run test:fast  # desktop tests (about 30 minutes); npm test runs everything
+npm ci                 # once: installs the test runner
+npm run serve          # play locally at http://127.0.0.1:4173/  (index.html#paint opens a game directly)
+npm run check          # a few seconds, no browser: registry, files, syntax, offline cache
+npm run stamp          # after changing any app file: refreshes the offline cache so devices pick up the change
+npm run test:game -- "Magic Paint"   # the browser tests whose names match
+npm run test:fast      # every desktop test (about 30 minutes); npm test runs every screen size too
 ```
 
-To add a game, create `games/<key>.js`, add a `<script>` line for it in `index.html` (before `js/app.js`) and add
-the file to `SHELL` in `sw.js`. The offline test fails if a file the page loads is missing from `SHELL`.
+## Add a game
+
+```
+npm run new-game -- bugs "Bug Hunt" --section play --icon 🐞 --age 3+
+```
+
+That creates `games/bugs/` from the template, adds its line to `games/registry.js`, a test file in `tests/games/`,
+and refreshes the offline cache. Open `index.html#bugs` and start changing it. The full guide is in
+[games/README.md](games/README.md).
+
+## Work on one game
+
+Everything for a game is in its folder: `games/<key>/<key>.js` and `<key>.css`. Change it, then:
+
+```
+npm run check && npm run stamp
+npm run test:game -- "<the game's title>"
+```
+
+Styles in a game's own CSS file start with the game's class prefix (Magic Paint uses `pp-`), so they can't change
+another game. Older games still keep some styles in `css/app.css`; move them into the game's folder when you work on
+that game.

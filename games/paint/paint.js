@@ -1,6 +1,9 @@
 /* ---------------- Magic Paint ----------------
-   One slim bar of category buttons (colours, brushes, stamps, magic, paper, eraser, undo, redo). Each category opens a
-   pop-up menu over the paper, so the drawing space is the whole board.
+   One slim bar of category buttons (colours, brushes, stamps, magic, paper, eraser, undo, redo) plus a strip of quick
+   colours, one tap each. Portrait screens put them under the paper, landscape screens down the right side, so the paper
+   keeps the long side. Each category opens a pop-up menu over the paper.
+   Several children paint at once: every finger keeps the colour, brush and size it started with, so one child picking a
+   new colour never changes another child's line half-way. Party mode (in Magic) gives every new finger its own colour.
    Layers, bottom to top: the paper colour (board background), ink (everything the child paints; the eraser cuts it
    back to the paper), outline pages (coloring pictures, letters, numbers; never erased), the mirror guide.
    Passive learning, on screen (spoken too if Talk is switched on in Magic):
@@ -34,6 +37,8 @@ init(stage,g){
   const plural=(n,s)=>n===1?s:/fish|sheep|deer/i.test(s)?s:/[^aeiou]y$/i.test(s)?s.slice(0,-1)+'ies':/(s|x|ch|sh)$/i.test(s)?s+'es':s+'s';
   const lc=s=>s.toLowerCase();
 
+  /* the quick colour strip: the most-used colours first; whatever doesn't fit on a small screen is in the 🎨 menu */
+  const QUICK=['rainbow','#FF4F5E','#FF8A2B','#FFC83D','#24C786','#3D7BFF','#9A5BFF','#FF7FC8','#9B6235','#1D1842','#FFFFFF','#18BFD6','#9A9AA8'];
   stage.innerHTML=`<div class="paint">
     <div class="pp-board">
       <canvas class="pp-ink" aria-label="Drawing paper"></canvas><canvas class="pp-lines" aria-hidden="true"></canvas><canvas class="pp-guide" aria-hidden="true"></canvas>
@@ -41,6 +46,8 @@ init(stage,g){
       <div class="pp-shade" hidden></div>
       <div class="pp-menu" hidden role="dialog"></div>
     </div>
+    <div class="pp-side">
+    <div class="pp-quick" role="group" aria-label="Quick colors">${QUICK.map(v=>{const n=COLS.find(c=>c[0]===v)[1];return `<button class="pp-q${v==='rainbow'?' rainbow':''}" data-q="${v}" style="--c:${v}" aria-label="${n}" title="${n}"></button>`}).join('')}</div>
     <div class="pp-bar">
       <button class="pp-b" data-cat="color" aria-label="Colors" title="Colors"><span class="pp-sw"></span></button>
       <button class="pp-b" data-cat="brush" aria-label="Brushes" title="Brushes"><span class="pp-bi">🖌️</span><span class="pp-dot"></span></button>
@@ -51,13 +58,13 @@ init(stage,g){
       <span class="pp-gap"></span>
       <button class="pp-b" id="undo" aria-label="Undo" title="Undo">↩️</button>
       <button class="pp-b" id="redo" aria-label="Redo" title="Redo">↪️</button>
-    </div></div>`;
+    </div></div></div>`;
   const $s=q=>stage.querySelector(q),board=$s('.pp-board'),cv=$s('.pp-ink'),lv=$s('.pp-lines'),gv=$s('.pp-guide'),menu=$s('.pp-menu'),shade=$s('.pp-shade'),sayEl=$s('.pp-say');
   const cx=cv.getContext('2d',{willReadFrequently:true}),lx=lv.getContext('2d',{willReadFrequently:true}),gx=gv.getContext('2d');
   let W=0,H=0,D=1;
   /* state */
   let color='rainbow',colorName='Rainbow',tool='brush',lastBrush='brush',size=18,stamp=null,mirror='off',hue=0,paper='#FFFFFF',page={id:'blank',arg:0};
-  let words=true,talk=false,stampTab='shapes',openCat=null;
+  let words=true,talk=false,partyPaint=false,partyI=0,stampTab='shapes',openCat=null;
   try{talk=localStorage.getItem('wb-paint-talk')==='on';words=localStorage.getItem('wb-paint-words')!=='off'}catch(e){}
   let parts=[],filled=new Set(),doneTold=false,prevTool='brush',letterI=0,numN=0,mixA=null,mixB=null;const mixFound=new Set();
   let streak={key:'',n:0,t:0},dots={n:0,t:0},mirrorTold=false;
@@ -84,6 +91,10 @@ init(stage,g){
     if(old.width){cx.save();cx.setTransform(1,0,0,1,0,0);cx.drawImage(old,0,0,old.width,old.height,0,0,cv.width,cv.height);cx.restore()}
     drawPage();drawGuide()}
   const ro=new ResizeObserver(resize);ro.observe(board);g.onEnd(()=>ro.disconnect());
+  /* quick colours: show the ones that fit in their strip; the rest are hidden (never half-cut) and live in the 🎨 menu */
+  function fitQuick(){const q=$s('.pp-quick'),bs=[...q.children];bs.forEach(b=>b.hidden=false);
+    for(const b of bs)b.hidden=b.offsetLeft+b.offsetWidth>q.clientWidth+1||b.offsetTop+b.offsetHeight>q.clientHeight+1}
+  const rq=new ResizeObserver(fitQuick);rq.observe($s('.pp-quick'));g.onEnd(()=>rq.disconnect());
 
   /* ---------- shapes (stamps and the pieces of coloring pages) ---------- */
   function poly(p,cx0,cy0,r,n,rot=-Math.PI/2){for(let i=0;i<n;i++){const a=rot+i*2*Math.PI/n;i?p.lineTo(cx0+r*Math.cos(a),cy0+r*Math.sin(a)):p.moveTo(cx0+r*Math.cos(a),cy0+r*Math.sin(a))}p.closePath()}
@@ -143,8 +154,10 @@ init(stage,g){
     gx.stroke();gx.restore()}
 
   /* ---------- painting ---------- */
-  const ink=()=>color==='rainbow'?`hsl(${hue},95%,52%)`:color;
-  function dab(x,y){const c=ink();for(const [a,b] of copies(x,y)){cx.save();
+  /* A brush is what one finger paints with: {tool,color,size}. Each finger keeps its own (see pointerdown). */
+  const brushNow=()=>({tool,color,size,stamp,name:colorName});
+  const ink=(b=brushNow())=>b.color==='rainbow'?`hsl(${hue},95%,52%)`:b.color;
+  function dab(x,y,B=brushNow()){const c=ink(B),tool=B.tool,size=B.size;for(const [a,b] of copies(x,y)){cx.save();
     if(tool==='eraser'){cx.globalCompositeOperation='destination-out';cx.beginPath();cx.arc(a,b,size*.75,0,Math.PI*2);cx.fill()}
     else if(tool==='spray'){cx.fillStyle=c;for(let i=0;i<Math.max(8,size);i++){const an=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*size*1.8;cx.beginPath();cx.arc(a+Math.cos(an)*r,b+Math.sin(an)*r,Math.max(.6,size/20),0,Math.PI*2);cx.fill()}}
     else if(tool==='sparkle'){cx.fillStyle=c;for(let i=0;i<5;i++){const xx=a+(Math.random()-.5)*size*2,yy=b+(Math.random()-.5)*size*2,rr=2+Math.random()*size*.28;cx.beginPath();
@@ -153,14 +166,14 @@ init(stage,g){
     else if(tool==='neon'){cx.fillStyle=c;cx.shadowColor=c;cx.shadowBlur=size*1.5;cx.beginPath();cx.arc(a,b,Math.max(1,size*.325),0,Math.PI*2);cx.fill()}
     else{cx.fillStyle=c;cx.beginPath();cx.arc(a,b,size/2,0,Math.PI*2);cx.fill()}
     cx.restore()}}
-  function segment(x0,y0,x1,y1){hue=(hue+2)%360;
+  function segment(x0,y0,x1,y1,B=brushNow()){hue=(hue+2)%360;const tool=B.tool,size=B.size;
     if(tool==='spray'||tool==='sparkle'||tool==='bubble'){const dist=Math.hypot(x1-x0,y1-y0),step=Math.max(3,size*.45),n=Math.min(200,Math.ceil(dist/step));
-      for(let i=1;i<=n;i++)dab(x0+(x1-x0)*i/n,y0+(y1-y0)*i/n);return}
+      for(let i=1;i<=n;i++)dab(x0+(x1-x0)*i/n,y0+(y1-y0)*i/n,B);return}
     /* every copy is mapped the same way at both ends, so mirrored lines never jump across the paper */
     const a=copies(x0,y0),b=copies(x1,y1);
     cx.save();cx.lineCap=cx.lineJoin='round';
     if(tool==='eraser'){cx.globalCompositeOperation='destination-out';cx.lineWidth=size*1.5;cx.strokeStyle='#000'}
-    else{cx.strokeStyle=ink();cx.lineWidth=size;if(tool==='neon'){cx.shadowColor=cx.strokeStyle;cx.shadowBlur=size*1.5;cx.lineWidth=Math.max(2,size*.65)}}
+    else{cx.strokeStyle=ink(B);cx.lineWidth=size;if(tool==='neon'){cx.shadowColor=cx.strokeStyle;cx.shadowBlur=size*1.5;cx.lineWidth=Math.max(2,size*.65)}}
     for(let i=0;i<a.length;i++){cx.beginPath();cx.moveTo(a[i][0],a[i][1]);cx.lineTo(b[i][0],b[i][1]);cx.stroke()}
     cx.restore()}
 
@@ -171,7 +184,7 @@ init(stage,g){
     if(kind==='thing'){const t=THINGS.find(x=>x[0]===v);return{key:'t'+v,name:t[1]}}
     if(kind==='abc'){const l=LETTERS.find(x=>x[0]===v);return{key:'l'+v,name:v,letter:l}}
     return{key:'n'+v,name:String(v),num:+v}}
-  function stampAt(x,y){const [kind,v]=stamp,s=size*2.6+24,c=ink();
+  function stampAt(x,y,B=brushNow()){const [kind,v]=B.stamp||stamp,s=B.size*2.6+24,c=ink(B);
     for(const [a,b] of unique(copies(x,y))){cx.save();cx.translate(a,b);
       if(kind==='shape'){const p=shapePath(v,0,0,s,v==='rectangle'?s*.62:v==='oval'?s*.68:v==='triangle'?s*.87:s);cx.fillStyle=c;cx.fill(p);cx.lineWidth=2;cx.strokeStyle='rgba(29,24,66,.35)';cx.stroke(p)}
       else if(kind==='abc'||kind==='num'){cx.font=`900 ${s}px ${FONT}`;cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle=c;cx.lineWidth=3;cx.strokeStyle='rgba(29,24,66,.35)';
@@ -207,12 +220,12 @@ init(stage,g){
     for(let p=0;p<m.length;p++)if(m[p]){const i=p*4;d[i]=rgb[0];d[i+1]=rgb[1];d[i+2]=rgb[2];d[i+3]=255}
     cx.putImageData(im,0,0);return n}
   function partAt(x,y){let best=-1;parts.forEach((p,i)=>{if(lx.isPointInPath(p.path,x*D,y*D)&&(best<0||p.area<parts[best].area))best=i});return best}
-  function fillAt(x,y){const c=ink(),rgb=hexRGB(c);let any=0,hit=-1;
+  function fillAt(x,y,B=brushNow()){const c=ink(B),rgb=hexRGB(c);let any=0,hit=-1;
     for(const [a,b] of unique(copies(x,y))){const n=flood(a,b,rgb);if(n){any+=n;if(hit<0)hit=partAt(a,b)}}
     hue=(hue+40)%360;
     if(!any){buzz();return}
     tone(300,.25,'sine',.15,0,700);
-    const name=color==='rainbow'?'Rainbow':colorName;
+    const name=B.color==='rainbow'?'Rainbow':B.name;
     if(hit>=0){filled.add(hit);const part=parts[hit];
       if(page.id==='num'){const k=filled.size;tell(`<span class="pp-big">${k}</span> ${word(k)}`,word(k),c);
         if(k===parts.length&&!doneTold){doneTold=true;g.later(()=>{tell(`🎉 You counted ${word(k)}!`,`You counted ${word(k)}!`);cheer();party();addStar()},700)}return}
@@ -222,7 +235,7 @@ init(stage,g){
     else tell(`Splash! ${cw(name,c)} fills the space`,`${name}!`,c)}
 
   /* ---------- art talk: describe the stroke the child just made ---------- */
-  function describe(path){const now=performance.now(),name=color==='rainbow'?'Rainbow':colorName,C=color==='rainbow'?null:color,col=colorWord();
+  function describe(path,B=brushNow()){const now=performance.now(),name=B.color==='rainbow'?'Rainbow':B.name,C=B.color==='rainbow'?null:B.color,col=B.color==='rainbow'?'<b class="pp-rb">Rainbow</b>':cw(B.name,B.color);
     let L=0;for(let i=1;i<path.length;i++)L+=Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1]);
     if(L<10){dots.n=now-dots.t<5000?dots.n+1:1;dots.t=now;const n=dots.n;tell(sym(n===1?`${col} dot!`:`<span class="pp-big">${n}</span> ${word(n)} dots!`),n===1?`${name} dot`:`${word(n)} dots`,C);return}
     dots.n=0;
@@ -279,6 +292,9 @@ init(stage,g){
   function setMirror(m){mirror=m;mirrorTold=false;drawGuide();syncBar();tone(m==='off'?500:990,.2,'triangle');
     tell(m==='off'?'Mirror off':m==='two'?'🪞 Two sides match — draw on one side!':m==='four'?'🪞 Four corners match!':'❄️ Snowflake — six parts match!',
       m==='off'?'Mirror off':m==='two'?'Two sides match':m==='four'?'Four corners match':'Snowflake. Six parts match.')}
+  /* party mode: every new finger paints in the next colour, so a group of children can tell their lines apart */
+  function setParty(on){partyPaint=on;syncBar();tone(on?990:500,.2,'triangle');
+    tell(on?'🎉 Party paint — every finger gets its own colour!':'Party paint off',on?'Every finger gets its own colour':'Party paint off')}
   function setPaper(c,n){if(pts.size)return;remember();paper=c;board.style.background=c;drawPage();drawGuide();tone(720,.12,'triangle');
     tell(c==='#1D1842'?'🌙 Night paper — try the 💡 glow pen!':`${n} paper`,`${n} paper`)}
   function setPage(id){if(pts.size)return;remember();
@@ -312,7 +328,8 @@ init(stage,g){
     $s('[data-cat="brush"]').classList.toggle('on',tool!=='eraser'&&tool!=='stamp');$s('[data-cat="stamp"]').classList.toggle('on',tool==='stamp');
     $s('[data-cat="magic"]').classList.toggle('on',mirror!=='off');
     const er=$s('#eraser');er.classList.toggle('on',tool==='eraser');er.setAttribute('aria-pressed',tool==='eraser');
-    stage.querySelectorAll('.pp-bar [data-cat]').forEach(b=>b.classList.toggle('open',b.dataset.cat===openCat))}
+    stage.querySelectorAll('.pp-bar [data-cat]').forEach(b=>b.classList.toggle('open',b.dataset.cat===openCat));
+    stage.querySelectorAll('.pp-q').forEach(b=>{const on=!partyPaint&&b.dataset.q===color;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)})}
   const opt=(attrs,inner,on,label)=>`<button class="pp-o${on?' on':''}" ${attrs} aria-label="${label}" title="${label}">${inner}</button>`;
   function renderMenu(){const c=openCat;let h='';
     if(c==='color'){h=`<h3>🖍️ Colors</h3><div class="pp-grid">${COLS.map(([v,n])=>opt(`data-col="${v}" data-n="${n}"`,`<span class="pp-swatch${v==='rainbow'?' rainbow':''}" style="--c:${v}"></span><span class="pp-ol">${n}</span>`,color===v,n)).join('')}</div>
@@ -333,7 +350,8 @@ init(stage,g){
     else if(c==='magic'){const M=[['off','🚫','No mirror'],['two','🪞','Two sides'],['four','✚','Four corners'],['snow','❄️','Snowflake']];
       h=`<h3>🪄 Mirror magic</h3><div class="pp-grid">${M.map(([k,i,n])=>opt(`data-mir="${k}"`,`<span class="pp-oi">${i}</span><span class="pp-ol">${n}</span>`,mirror===k,n)).join('')}</div>
       <h3>💬 Helpers</h3><div class="pp-grid">${opt('data-words',`<span class="pp-oi">💬</span><span class="pp-ol">Words ${words?'on':'off'}</span>`,words,'Words on screen')}
-      ${opt('data-talk',`<span class="pp-oi">🗣️</span><span class="pp-ol">Talk ${talk?'on':'off'}</span>`,talk,'Talk out loud')}</div>`}
+      ${opt('data-talk',`<span class="pp-oi">🗣️</span><span class="pp-ol">Talk ${talk?'on':'off'}</span>`,talk,'Talk out loud')}</div>
+      <h3>👫 Painting together</h3><div class="pp-grid">${opt('data-party',`<span class="pp-oi">🎉</span><span class="pp-ol">Party ${partyPaint?'on':'off'}</span>`,partyPaint,'Every finger gets its own colour')}</div>`}
     else if(c==='paper'){h=`<h3>🖼️ Pictures to color</h3><div class="pp-grid">${PAGES.map(([k,i,n])=>opt(`data-page="${k}"`,`<span class="pp-oi">${i}</span><span class="pp-ol">${k==='abc'&&page.id==='abc'?'Next letter':k==='num'&&page.id==='num'?'Next number':n}</span>`,page.id===k,n)).join('')}</div>
       <h3>📄 Paper color</h3><div class="pp-grid">${PAPERS.map(([v,n])=>opt(`data-paper="${v}" data-n="${n}"`,`<span class="pp-swatch sq" style="--c:${v}"></span><span class="pp-ol">${n}</span>`,paper===v,n+' paper')).join('')}</div>
       <div class="pp-grid">${opt('id="clr"',`<span class="pp-oi">🗑️</span><span class="pp-ol">${clrArm?'Tap again!':'New paper'}</span>`,clrArm,'New paper')}${opt('id="save"','<span class="pp-oi">💾</span><span class="pp-ol">Save</span>',false,'Save picture')}</div>`}
@@ -358,6 +376,8 @@ init(stage,g){
   presses($s('.pp-bar'),b=>{if(b.dataset.cat)openMenu(b.dataset.cat);else if(b.id==='eraser'){closeMenu();setTool(tool==='eraser'?prevTool:'eraser');tone(tool==='eraser'?380:620,.1,'triangle')}
     else if(b.id==='undo')undo();else if(b.id==='redo')redo()});
   shade.addEventListener('pointerdown',e=>{e.preventDefault();closeMenu()});
+  presses($s('.pp-quick'),b=>{const v=b.dataset.q,c=COLS.find(x=>x[0]===v);if(!c)return;closeMenu();partyPaint=false;
+    setColor(c[0],c[1]);tone(330+COLS.indexOf(c)*45,.15,'triangle')});
   presses(menu,b=>{const D_=b.dataset;
     if(D_.col){setColor(D_.col,D_.n);tone(330+COLS.findIndex(x=>x[0]===D_.col)*45,.15,'triangle');closeMenu()}
     else if(D_.mix)mixPick(D_.mix,D_.n);
@@ -368,6 +388,7 @@ init(stage,g){
     else if(D_.mir){setMirror(D_.mir);closeMenu()}
     else if('words' in D_){words=!words;if(!words)sayEl.classList.remove('show');try{localStorage.setItem('wb-paint-words',words?'on':'off')}catch(e){}renderMenu();tone(700,.08,'triangle');if(words)tell('💬 Words on')}
     else if('talk' in D_){talk=!talk;try{localStorage.setItem('wb-paint-talk',talk?'on':'off')}catch(e){};if(!talk)try{speechSynthesis.cancel()}catch(e){};renderMenu();tone(700,.08,'triangle');tell(talk?'🗣️ Talking on':'Talking off',talk?'Talking on':null)}
+    else if('party' in D_){setParty(!partyPaint);closeMenu()}
     else if(D_.page){setPage(D_.page);closeMenu()}
     else if(D_.paper){setPaper(D_.paper,D_.n);closeMenu()}
     else if(b.id==='clr'){if(!clrArm){clrArm=true;renderMenu();tone(500,.1,'triangle');clearTimeout(clrT);clrT=g.later(()=>{clrArm=false;if(openCat==='paper')renderMenu()},3000)}else{clrArm=false;clearPaper();closeMenu()}}
@@ -378,19 +399,22 @@ init(stage,g){
   function movePoint(e){const p=pts.get(e.pointerId);if(!p||p.kind==='fill')return;
     const evs=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[];
     for(const s of evs.length?evs:[e]){const [x,y]=pos(s);
-      if(p.kind==='stamp'){const dist=Math.hypot(x-p.x,y-p.y),stepD=size*2.4+24;if(dist>=stepD){const n=Math.min(100,Math.floor(dist/stepD));for(let j=1;j<=n;j++)stampAt(p.x+(x-p.x)*j/n,p.y+(y-p.y)*j/n);p.x=x;p.y=y}}
-      else{segment(p.x,p.y,x,y);p.x=x;p.y=y;if(p.path.length<4000)p.path.push([x,y])}}}
+      if(p.kind==='stamp'){const dist=Math.hypot(x-p.x,y-p.y),stepD=p.brush.size*2.4+24;if(dist>=stepD){const n=Math.min(100,Math.floor(dist/stepD));for(let j=1;j<=n;j++)stampAt(p.x+(x-p.x)*j/n,p.y+(y-p.y)*j/n,p.brush);p.x=x;p.y=y}}
+      else{segment(p.x,p.y,x,y,p.brush);p.x=x;p.y=y;if(p.path.length<4000)p.path.push([x,y])}}}
+  /* the brush this finger keeps until it lifts; in party mode each new finger takes the next colour */
+  function fingerBrush(){const b=brushNow();if(partyPaint&&b.tool!=='eraser'){const c=COLS[1+partyI++%(COLS.length-4)];b.color=c[0];b.name=c[1]}return b}
   cv.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;e.preventDefault();
     if(openCat){closeMenu();return}
     try{cv.setPointerCapture(e.pointerId)}catch(err){}
     const [x,y]=pos(e);
-    if(tool==='fill'){if(pts.size)return;remember();pts.set(e.pointerId,{kind:'fill'});fillAt(x,y);return}
+    const brush=fingerBrush();
+    if(tool==='fill'){if(pts.size)return;remember();pts.set(e.pointerId,{kind:'fill'});fillAt(x,y,brush);return}
     if(!pts.size)remember();
-    const kind=tool==='stamp'&&stamp?'stamp':'draw';pts.set(e.pointerId,{x,y,kind,path:[[x,y]]});
-    if(kind==='stamp')stampAt(x,y);else dab(x,y)});
+    const kind=tool==='stamp'&&stamp?'stamp':'draw';pts.set(e.pointerId,{x,y,kind,brush,path:[[x,y]]});
+    if(kind==='stamp')stampAt(x,y,brush);else dab(x,y,brush)});
   cv.addEventListener('pointermove',e=>{if(pts.has(e.pointerId)){e.preventDefault();movePoint(e)}});
   const end=e=>{const p=pts.get(e.pointerId);if(!p)return;if(e.type==='pointerup')movePoint(e);pts.delete(e.pointerId);
-    if(p.kind==='draw'&&tool!=='eraser'&&e.type!=='pointercancel')describe(p.path)};
+    if(p.kind==='draw'&&p.brush.tool!=='eraser'&&e.type!=='pointercancel')describe(p.path,p.brush)};
   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);cv.addEventListener('lostpointercapture',end);
   g.onEnd(()=>{pts.clear();try{speechSynthesis.cancel()}catch(e){}});
 
@@ -407,13 +431,13 @@ init(stage,g){
     return false});
 
   board.style.background=paper;syncBar();resize();
-  g.later(()=>tell('🎨 Draw anything! Tap the buttons below for colors, brushes and stamps.'),400);
+  g.later(()=>tell('🎨 Draw anything! Tap a colour, then paint — lots of fingers can paint at once.'),400);
 
   /* test hook: read the picture as the child sees it (paper + ink + outlines) */
   GAMES.paint._debug={
     pixel(x,y){const i=[Math.floor(x*D),Math.floor(y*D)],a=cx.getImageData(i[0],i[1],1,1).data,l=lx.getImageData(i[0],i[1],1,1).data,p=hexRGB(paper);
       const m=(u,v,t)=>u*(1-t)+v*t;let c=[0,1,2].map(j=>m(p[j],a[j],a[3]/255));c=[0,1,2].map(j=>Math.round(m(c[j],l[j],l[3]/255)));return c},
-    get state(){return{color,colorName,tool,size,stamp,mirror,paper,page:{...page},letterI,numN,openCat,hist:hist.length,future:future.length,filled:filled.size,parts:parts.length,words,talk,mixFound:[...mixFound]}},
+    get state(){return{color,colorName,tool,size,stamp,mirror,paper,page:{...page},letterI,numN,openCat,hist:hist.length,future:future.length,filled:filled.size,parts:parts.length,words,talk,party:partyPaint,mixFound:[...mixFound]}},
     get caption(){return sayEl.textContent},
     partCenters(){return parts.map((p,i)=>{const own=[];
       for(let y=2;y<H;y+=3)for(let x=2;x<W;x+=3){const k=partAt(x,y);if(k===i&&lx.getImageData(Math.floor(x*D),Math.floor(y*D),1,1).data[3]===0)own.push([x,y])}

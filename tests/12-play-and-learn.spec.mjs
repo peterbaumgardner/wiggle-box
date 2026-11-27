@@ -66,10 +66,11 @@ async function pick(page, cat, sel) {
 }
 const pickColor = (page, hex) => pick(page, 'color', `[data-col="${hex}"]`);
 test.describe('08 Magic Paint', () => {
-  test('the paper gets nearly the whole stage; every category opens a menu, a pick closes it, a tap outside closes it without painting', async ({ page }) => {
+  test('the paper gets most of the screen; every category opens a menu, a pick closes it, a tap outside closes it without painting', async ({ page }) => {
     await home(page); await openGame(page, 'paint');
-    const sizes = await page.evaluate(() => { const s = document.querySelector('#stage').getBoundingClientRect(), b = document.querySelector('.pp-board').getBoundingClientRect(); return [b.height / s.height, b.width / s.width]; });
-    expect(sizes[0]).toBeGreaterThan(.86); expect(sizes[1]).toBeGreaterThan(.98);
+    // landscape: the tools stand down the side, so the paper keeps the full height
+    const sizes = await page.evaluate(() => { const s = document.querySelector('#stage').getBoundingClientRect(), b = document.querySelector('.pp-board').getBoundingClientRect(); return [b.height / s.height, (b.width * b.height) / (innerWidth * innerHeight)]; });
+    expect(sizes[0]).toBeGreaterThan(.98); expect(sizes[1]).toBeGreaterThan(.8);
     expect(await page.locator('.pp-bar button').count()).toBeLessThanOrEqual(9);
     for (const cat of ['color', 'brush', 'stamp', 'magic', 'paper']) {
       await page.locator(`.pp-bar [data-cat="${cat}"]`).click();
@@ -280,6 +281,30 @@ test.describe('08 Magic Paint', () => {
     await expect(page.locator('.pp-say')).toContainText('A is for Apple');
     await pick(page, 'paper', '[data-page="abc"]');
     await expect(page.locator('.pp-say')).toContainText('B is for Bear');
+  });
+
+  test('quick colours pick in one tap; each finger keeps its own colour; party mode gives every finger a new colour', async ({ page }) => {
+    await home(page); await openGame(page, 'paint');
+    const box = await canvasBox(page);
+    await page.locator('.pp-quick [data-q="#24C786"]').click();
+    expect((await st(page)).colorName).toBe('Green');
+    await expect(page.locator('.pp-quick [data-q="#24C786"]')).toHaveClass(/on/);
+    // a finger that started green stays green, even when another child picks red half-way through its line
+    const finger = (id, type, x, y) => page.evaluate(([id, type, x, y]) => document.querySelector('.pp-ink').dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, bubbles: true, cancelable: true, clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1 })), [id, type, x, y]);
+    await finger(1, 'pointerdown', box.x + 100, box.y + 200);
+    await page.locator('.pp-quick [data-q="#FF4F5E"]').click();
+    for (let x = 110; x <= 300; x += 10) await finger(1, 'pointermove', box.x + x, box.y + 200);
+    await finger(1, 'pointerup', box.x + 300, box.y + 200);
+    expect(near(await px(page, box.x + 250, box.y + 200), [0x24, 0xC7, 0x86], 10)).toBe(true);
+    // party: two fingers at once paint in two different colours
+    await pick(page, 'magic', '[data-party]');
+    expect((await st(page)).party).toBe(true);
+    await finger(2, 'pointerdown', box.x + 100, box.y + 320); await finger(3, 'pointerdown', box.x + 100, box.y + 420);
+    for (let x = 110; x <= 300; x += 10) { await finger(2, 'pointermove', box.x + x, box.y + 320); await finger(3, 'pointermove', box.x + x, box.y + 420); }
+    await finger(2, 'pointerup', box.x + 300, box.y + 320); await finger(3, 'pointerup', box.x + 300, box.y + 420);
+    const a = await px(page, box.x + 200, box.y + 320), b = await px(page, box.x + 200, box.y + 420);
+    expect(near(a, [255, 255, 255], 20) || near(b, [255, 255, 255], 20), 'both lines painted').toBe(false);
+    expect(near(a, b, 10), 'two different colours').toBe(false);
   });
 
   test('a stroke that leaves the paper and comes back stays one continuous line, and the picture survives a resize', async ({ page }) => {
