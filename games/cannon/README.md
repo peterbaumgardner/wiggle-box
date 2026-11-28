@@ -34,5 +34,26 @@ One cannon: any finger aims it, the last one to let go fires. It's a take-turns 
 ## Keep it this way
 - The panel formulas and the ball must agree: the test compares both against its own math.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ● · Creative ○ · Critical ◐
+**Aims at ages:** 7-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Projectile motion with live formulas for range, height and time on several planets; aiming by drag; endless levels.
+
+Upgrades, most learning first:
+1. **Estimate first** (`think.predict`, `math.measure`): before firing, drag a flag to where you think it will land; the gap is shown in metres.
+2. **Adaptive levels** (`learn.level`): wall height and target distance grow with success instead of the fixed three kinds.
+3. **Angle words and a protractor** (`math.geometry`): the angle shown on a protractor arc while aiming.
+4. **Younger layer** (ages 5-6): no formulas, just "more power" / "higher" words and a picture target.
+5. **Compare planets** (`think.evidence`): same angle and power on two planets, side by side.
+
+"Talk about it" questions (`learn.talk`):
+- Which angle sends the ball furthest? How could we test it?
+- Why does the ball go further on the Moon?
+- Where would you aim to get over a tall wall?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

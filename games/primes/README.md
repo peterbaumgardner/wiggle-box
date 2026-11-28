@@ -31,5 +31,25 @@ Tap-based on a shared board.
 ## Keep it this way
 - Animated wilting steps are tied to the mode; keep them stopping on a mode switch.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ● · Creative ○ · Critical ◐
+**Aims at ages:** 7-10 · **Four pillars (estimate, 0-3):** Active 2 · Engaged 2 · Meaningful 1 · Social 1
+
+What it teaches now:
+- The sieve of Eratosthenes to 100, factor trees, GCD and LCM of twelve pairs.
+
+Upgrades, most learning first:
+1. **Arrays** (`math.multiply`): a number shown as rows of dots; primes only make one row.
+2. **Predict the next prime** (`think.predict`) before the sieve reaches it.
+3. **Skip-counting songs** (`math.patterns`): multiples light up with a rhythm.
+4. **Generated pairs** (`learn.level`) beyond the fixed twelve.
+
+"Talk about it" questions (`learn.talk`):
+- Why can't you make a rectangle out of 7 dots?
+- What do all the numbers that wilt after you tap 2 have in common?
+- Is 1 a prime? Why or why not?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

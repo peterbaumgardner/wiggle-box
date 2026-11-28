@@ -32,5 +32,25 @@ Tap-based: every tap is one move on the shared scale. There is no per-finger dra
 ## Keep it this way
 - Undo must record only real moves (that was a past bug).
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ● · Creative ○ · Critical ●
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Solving ax + b = cx + d by taking the same from both pans; torque on a seesaw. Ten fixed algebra levels.
+
+Upgrades, most learning first:
+1. **Generated levels** (`learn.level('math.algebra')`): new equations at the child's level after the ten fixed ones.
+2. **Younger layer** (ages 4-6, `math.compare`): plain blocks, "which side is heavier?", make it level by adding.
+3. **Explain a step** (`talk.explain`): after each move, the equation and a sentence ("took 2 from both sides, still level").
+4. **Number line for x** (`math.numberline`): show x's value on a line when found.
+
+"Talk about it" questions (`learn.talk`):
+- Why do you have to do the same thing to both sides?
+- How could you find out how heavy a mystery box is at home?
+- What makes the seesaw tip?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

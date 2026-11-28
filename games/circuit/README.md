@@ -38,5 +38,26 @@ Each finger is tracked and keeps its own wire-in-progress, so two children can w
 ## Keep it this way
 - Series/parallel labels must come from the solver, never from counting parts (that was the old bug).
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ◐ · Creative ◐ · Critical ●
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Real circuits (nodal analysis): series, parallel, switches, resistors, fans; Ohm's law on a meter; short-circuit and burn-out feedback.
+
+Upgrades, most learning first:
+1. **Predict the bulbs** (`think.predict`): before closing a switch, guess which bulbs light and how bright.
+2. **Fix the broken circuit** (`think.debug`): challenges with one wrong wire to find.
+3. **Explain the flow** (`talk.explain`): a "why" button shows the current path animated with a one-sentence reason.
+4. **Younger layer** (ages 5-6): battery-bulb-wire only, with "a loop makes the light work".
+5. **Design challenges** (`create.design`): "make a fan and a light that switch separately".
+
+"Talk about it" questions (`learn.talk`):
+- Why did the bulb go out when you opened the switch?
+- How is a circuit like a race track?
+- What things at home use circuits?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

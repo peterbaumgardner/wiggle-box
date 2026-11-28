@@ -11,6 +11,8 @@ app runs from any static host and offline.
 | `input.js` | `fingers(el, {down, move, up})` tracks every finger (returns a Map of live fingers), `twoFinger(map)` pinch/twist, `draggable(el, {onTap, onDrop...})`, `fitCanvas(canvas)` sharp canvas sizing, `kbPointer(g, canvas)` keyboard finger |
 | `ui.js` | `labShell` (canvas + info panel), `compactBar` (toolbars that fold instead of wrapping), `infoDock`, `fxOverlay`, `chips`/`bindChips`, `slider`, `plane` (graph paper), `arrow`, `popMenu(anchor, html, onPick)`, `makeHint(el)`, `fmt`, `frac` |
 | `data.js` | `LETTERS` (A is for Apple 🍎), `ANIMALS`, `NUMW` (number words) |
+| `learn.js` | the learning layer: `learn.saw`, `learn.tried`, `learn.level` (adaptive difficulty), `learn.say` (spoken words, grown-up switch), `learn.talk` ("Talk about it" questions), `learn.variant` (research A/B). Skill ids and rules: `docs/LEARNING_FRAMEWORK.md` |
+| `grownups.js` | the grown-ups view (hold the home ⭐ counter for two seconds): practice per area, voice and talk switches, export, reset |
 | `games.js` | `GAMES`, `SECTIONS`, `registerSections`, `registerGames`, `defineGame(key, {init})`, `loadGame(key)` |
 | `app.js` | home screen, `open(key)` / `home()`, the play session `g`, keyboard routing, `window.WiggleBox` test hook. Loaded last. |
 

@@ -27,10 +27,32 @@ Several fingers can aim and throw planets at the same time (each finger is its o
 - Rotating the screen used to fling planets out of orbit: fixed with the k / k³ rescale (audit D19).
 
 ## Not done / known gaps
-- Facts use `say()`, which is silent app-wide (voice off); the facts also show on screen.
+- Facts use `say()` (silent unless a grown-up turns Spoken words on); the facts also show on screen.
 
 ## Keep it this way
 - Any change to the integrator must keep the energy/angular-momentum test passing (long-run drift).
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ◐ · Talking ○ · Maths ◐ · Creative ◐ · Critical ◐
+**Aims at ages:** 4-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Real orbits (Kepler's laws) from flicks; planet facts and names; black hole mode.
+- Several children throw planets at once.
+
+Upgrades, most learning first:
+1. **Planet names as print** (`reading.words`): names shown next to planets by default for readers.
+2. **Order the planets** (`think.sort`, `math.numberline`): drag the eight planets into order from the Sun, then see the real distances on a line.
+3. **Size and speed comparisons** (`math.compare`): closer planets go faster; the game says "Mercury went around 4 times while Earth went once".
+4. **Make a moon** (`think.plan`): a challenge to put a moon around a planet.
+5. **Facts read aloud** (voice switch) and short fact cards kept in a collection.
+
+"Talk about it" questions (`learn.talk`):
+- Why do you think the closer planets move faster?
+- Which planet would you visit? What would you pack?
+- What would happen if the Sun disappeared?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

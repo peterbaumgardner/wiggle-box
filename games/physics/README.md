@@ -37,7 +37,7 @@ held becomes a twist handle for that body.
 - A puzzle broke when the screen turned; an offline first load hung forever: both fixed.
 
 ## Not done / known gaps
-- Narration (`say()`, 14 calls) is silent because voice is off app-wide.
+- Narration (`say()`, 14 calls) is silent unless a grown-up turns Spoken words on.
 - No saving of a built scene.
 - Only 5 puzzles.
 
@@ -45,5 +45,27 @@ held becomes a twist handle for that body.
 - Top speed is capped (~16 m/s) so nothing tunnels through a wall in one frame; keep that cap if you add faster things.
 - `matter.min.js` must stay in the offline list (`tools/games.mjs` adds it); the offline test opens Physics Lab offline.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ◐ · Creative ● · Critical ●
+**Aims at ages:** 3-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 2
+
+What it teaches now:
+- Real gravity (Earth, Moon, space, upside down), bouncing, throwing, stacking and crashing; five ramp puzzles.
+- Many fingers grab and throw at once.
+
+Upgrades, most learning first:
+1. **Predict the fall** (`think.predict`): drop two things together; children guess which lands first, then see.
+2. **More puzzles, adaptive** (`think.plan`): generate puzzles from `learn.level('think.plan')` instead of five fixed ones.
+3. **Words for forces** (`talk.vocab`): push, pull, heavy, bounce, balance said as things happen.
+4. **Build a tower challenge** (`create.design`, `math.spatial`): how tall can you build before it falls? Height on a ruler (number line).
+5. **Fair test helper** (`think.evidence`, ages 7+): change one thing (gravity) and compare two runs side by side.
+
+"Talk about it" questions (`learn.talk`):
+- Why did the tower fall?
+- What would happen on the Moon?
+- Which is heavier, the brick or the balloon? How can you tell?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

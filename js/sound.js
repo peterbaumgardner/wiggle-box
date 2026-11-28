@@ -44,12 +44,9 @@ function noise(d=.2,f=1200,q=1,vol=.2,when=0,f2,type='bandpass'){
 const pop=(p=1)=>{tone(620*p,.1,'sine',.2,0,260*p);tone(1240*p,.05,'sine',.05)};
 const cheer=()=>[523,659,784,1047].forEach((f,i)=>{tone(f,.35,'sine',.13,i*.085);tone(f*2,.2,'triangle',.03,i*.085)});
 const buzz=()=>{if(tooSoon('buzz',300))return;tone(392,.16,'triangle',.11,0);tone(311,.26,'triangle',.11,.13)};
-/* Spoken words are switched off for now. Flip VOICE to true to bring every game's narration back. */
-const VOICE=false;
-function say(t){
-  if(!VOICE||!soundOn) return;
-  try{const s=window.speechSynthesis;if(!s)return;s.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=.88;u.pitch=1.25;s.speak(u)}catch(e){}
-}
+/* Spoken words: every game's narration goes through learn.say (js/learn.js), which speaks only when a grown-up has
+   switched voice on in the grown-ups view (hold the ⭐ counter on the home screen for two seconds). Off by default. */
+function say(t){if(typeof learn==='object')learn.say(t)}
 /* Long sounds (like Wave Lab's string) register here so the sound button and a hidden tab can silence them. */
 const soundHooks=new Set();
 /* A hidden tab or a sleeping tablet should not keep making noise; wake the audio again when the child comes back. */

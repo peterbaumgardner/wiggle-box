@@ -40,6 +40,10 @@ The shared helpers (sound, confetti, stars, touch tracking, toolbars, menus) are
 
 ## 3. Rules every game follows
 
+For learning, also follow the rules in `docs/LEARNING_FRAMEWORK.md` section 4 and use `js/learn.js` (record practice
+with `learn.saw` / `learn.tried`, pick difficulty with `learn.level`, ask with `learn.talk`).
+
+
 1. **Many fingers at once.** Several children play together. Track touches by `pointerId` (the `fingers()` helper does
    this), never assume a single touch, and let each finger keep its own state (Magic Paint gives each finger its own
    colour and brush for the whole stroke).
@@ -82,12 +86,13 @@ New games are picked up automatically by the launch, lifecycle, offline and layo
 ## 6. Each game's README
 
 Every game folder has a `README.md`: what the game is, how it plays, a code map, what's done (with the tests that prove
-it), how it behaves with several children at once, its history, what isn't done, and rules to keep. Read it before you
+it), how it behaves with several children at once, its history, what isn't done, rules to keep, and its **Learning
+plan** (what it teaches, upgrades in priority order, "Talk about it" questions; see `docs/LEARNING_FRAMEWORK.md`). Read it before you
 change the game and update it in the same commit. `npm run check` fails if a game has no README.
 
 Gaps that apply to every game (not repeated in each README):
-- **Spoken words are off.** `say()` does nothing while `VOICE=false` in `js/sound.js`. Captions and labels show on
-  screen; Magic Paint has its own Talk switch.
+- **Spoken words are off by default.** `say()` speaks only when a grown-up turns Spoken words on in the grown-ups view
+  (hold the home ⭐ counter for two seconds). Captions and labels always show on screen.
 - **Never tested on real devices.** All tests run in headless Chromium with emulated touch; no Safari/iPad, Firefox or
   physical touchscreen runs (`WIGGLE_BOX_TEST_REPORT.md` › Known limits).
 - **Styles.** Except Magic Paint, Hungry Monster, Element Box and Atom Builder, a game's styles are still in the shared

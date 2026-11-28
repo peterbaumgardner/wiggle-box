@@ -35,5 +35,26 @@ Tap-based on one shared program.
 ## Keep it this way
 - Keep the move cap and block limit: they stop runaway programs on a child's device.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ◐ · Creative ◐ · Critical ●
+**Aims at ages:** 5-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Sequencing moves, loops and a function (My move) to collect gems; seven levels with a best block count.
+
+Upgrades, most learning first:
+1. **Generated levels** (`think.plan`, `learn.level`): more than seven, growing with success.
+2. **Find the bug** (`think.debug`): levels that start with a program that almost works.
+3. **Turn left / right blocks** (`math.spatial`): relative turns for older children.
+4. **Teach Robo** (research #15): Robo "remembers" the child's My move and uses it in later levels.
+5. **Younger layer** (ages 4-5): two-step programs with big arrows.
+
+"Talk about it" questions (`learn.talk`):
+- How did you know the robot would bump the wall?
+- Can you make it with fewer blocks?
+- Give someone at home directions to the kitchen like a robot.
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

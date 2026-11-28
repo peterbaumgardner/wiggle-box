@@ -34,5 +34,26 @@ Ripples: every finger can add or remove sources. Pendulum and string: one pendul
 ## Keep it this way
 - Any long sound must register in `soundHooks` (see `js/sound.js`) so the sound button and a hidden tab can stop it.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ◐ · Creative ◐ · Critical ◐
+**Aims at ages:** 7-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Pendulum period on four worlds, pendulum waves, ripple interference, string harmonics you can hear.
+
+Upgrades, most learning first:
+1. **Predict the swing** (`think.predict`): longer or shorter string: faster or slower? Choose, then see the count.
+2. **Count swings** (`math.count`, `math.measure`): a big swing counter and a timer; "10 swings in 20 seconds".
+3. **Make music with the string** (`create.music`): harmonics as notes children can play in order.
+4. **Calm and busy water** (`talk.vocab`): words for where waves add up and cancel.
+5. **Younger layer**: one pendulum and a "tick-tock" sound, no numbers.
+
+"Talk about it" questions (`learn.talk`):
+- Why does a long swing go slower?
+- Where do you see waves at home or outside?
+- How does a guitar make different notes?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

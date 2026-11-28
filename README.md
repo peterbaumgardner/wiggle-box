@@ -18,6 +18,7 @@ games/<key>/README.md      ... and its notes: what it is, what is done and not d
 games/_template/           the starting point for a new game (a working multi-touch sample, its styles, its tests)
 js/                        the platform every game shares (see js/README.md):
   util.js  sound.js  effects.js  input.js  ui.js  data.js   helpers: maths, sound, stars and confetti, touch, toolbars
+  learn.js  grownups.js    the learning layer (practice records, adaptive levels, voice, talk prompts) and the grown-ups view
   games.js                 the registry and the loader that fetches a game's files when it opens
   app.js                   home screen, opening and closing games, keyboard, test hook (loaded last)
 css/app.css                shared styles (layout, home screen, game shell, lab shell, toolbars)
@@ -28,6 +29,14 @@ tests/                     browser tests; tests/games/<key>.spec.mjs for games m
 
 A game's files load only when a child opens it. A mistake in one game shows "Oops" in that game; the home screen and
 every other game keep working.
+
+## Learning
+
+Wiggle Box is built as a research template for incidental learning (ages 3-10): motor skills, reading, talking, maths,
+creative and critical thinking. The research, the skill map and the rules every game follows are in
+[docs/LEARNING_FRAMEWORK.md](docs/LEARNING_FRAMEWORK.md); each game's README has its own Learning plan. Grown-ups can see
+what was practised, switch spoken words and "Talk about it" questions on or off, and export the data: hold the ⭐
+counter on the home screen for two seconds. Nothing leaves the device.
 
 ## Everyday commands
 

@@ -22,6 +22,21 @@
 ## Not done / known gaps
 - What's missing, simplified or never tested. Only things you've checked in the code.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md`.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ○ · Creative ○ · Critical ○
+**Aims at ages:** ? · **Four pillars (estimate, 0-3):** Active ? · Engaged ? · Meaningful ? · Social ?
+
+What it teaches now:
+- Skills (ids from the framework) and how the game records them with `learn.saw` / `learn.tried`.
+
+Upgrades, most learning first:
+1. ...
+
+"Talk about it" questions (`learn.talk`):
+- ...
+
 ## Keep it this way
 - Rules that keep this game working (design decisions, invariants the tests rely on).
 

@@ -30,5 +30,25 @@ Tap-based with one selection: it's a take-turns game.
 ## Keep it this way
 - Every deal must be solvable (`solve()`); keep refusing non-whole and negative results.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ● · Creative ◐ · Critical ●
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 1 · Social 1
+
+What it teaches now:
+- Combining numbers with + − × ÷ to hit a target; fifteen climbing levels and a Make 24 mode; refused moves explained.
+
+Upgrades, most learning first:
+1. **Many ways** (`create.remix`, rule 3): after a win, show another way to make the same target; a star for finding a second way.
+2. **Adaptive targets** (`learn.level('math.add')`): sizes and operations follow the child.
+3. **Younger layer** (ages 5-6): two cards, plus only, dots shown on each card (rule 6).
+4. **Say the sum** (`talk.explain`): the one-line formula read aloud with voice on.
+
+"Talk about it" questions (`learn.talk`):
+- Can you find another way to make this number?
+- Which is faster, adding or times? Why?
+- Make 10 with the fingers on your hands in two different ways.
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

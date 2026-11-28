@@ -35,5 +35,25 @@ Each finger drags its own corner in polygon mode (per-finger handle), so two chi
 ## Keep it this way
 - Keep re-zooming only after the finger lifts.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ● · Creative ◐ · Critical ◐
+**Aims at ages:** 7-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 1 · Social 1
+
+What it teaches now:
+- Polygons with live names, area, perimeter and angle sums; Pythagoras; circles and π; the unit circle with exact values.
+
+Upgrades, most learning first:
+1. **Shape hunt** (`math.shapes`, younger layer): "make a shape with 5 corners"; the shape is named when it matches.
+2. **Estimate area** (`math.measure`, `think.predict`): guess the area by counting squares, then reveal.
+3. **Symmetry lines** (`math.spatial`): show and count lines of symmetry as corners move.
+4. **Make a picture from shapes** (`create.design`).
+
+"Talk about it" questions (`learn.talk`):
+- How many triangles can you find in this room?
+- Why are wheels round and not square?
+- Which shape has the most corners you can think of?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

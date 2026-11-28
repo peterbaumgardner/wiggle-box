@@ -49,5 +49,26 @@ can drag bonds at once. Reactions: any finger can spark the chamber.
 - Science goes in `atoms-sci.js`, drawing in `atoms.js`. Never put a number a child reads into `atoms.js`.
 - Every value in `atoms-sci.js` has a source next to it; new values need one too, and `31-atoms-science` must pass.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ◐ · Talking ○ · Maths ◐ · Creative ◐ · Critical ●
+**Aims at ages:** 8-10+ · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Building elements 1-20 from particles; isotopes and ions; molecules recognised by structure with real 3-D shapes; reactions with real energies. All science sourced and tested (`docs/ATOM_BUILDER_SCIENCE.md`).
+
+Upgrades, most learning first:
+1. **Teach Robo-Atom** (research #15): the child explains to a character why an atom is an ion; the character asks one follow-up question.
+2. **Predict the reaction** (`think.predict`): before Spark, choose what will form from pictures.
+3. **Younger layer** (ages 6-7): build atoms by count only ("2 protons makes Helium"), names and pictures of where the element is found.
+4. **Element cards as print** (`reading.words`): each discovered element gets a card with its name and an everyday use.
+5. **Counting and balance** (`math.count`, `math.algebra`): show reaction equations as balanced piles of atoms.
+
+"Talk about it" questions (`learn.talk`):
+- What is everything around you made of?
+- Why do you think some atoms like to share electrons?
+- What do you think happens to atoms when something burns?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

@@ -28,5 +28,25 @@ Tap-based: every tap pours one bottle into the shared beaker.
 ## Keep it this way
 - Every target must be exactly pourable from the bottles offered (the test checks twelve levels).
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ● · Creative ○ · Critical ◐
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Adding fractions by pouring to an exact line, with fraction, decimal and percent shown.
+
+Upgrades, most learning first:
+1. **Fraction number line** (`math.numberline`, research #5): the beaker's level also shown on a 0-1 line with the fractions marked.
+2. **Younger layer** (`math.compare`, ages 4-6): halves and quarters only, "full", "half full" words.
+3. **Adaptive pools** (`learn.level('math.fractions')`): bottle sets move up and down with success instead of only up.
+4. **Recipes** (`create.design`): make your own potion recipe card that adds to 1.
+
+"Talk about it" questions (`learn.talk`):
+- Is a half bigger or smaller than a third? How do you know?
+- Where do you use halves in the kitchen?
+- How many quarters make a whole?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

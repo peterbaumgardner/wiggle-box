@@ -43,5 +43,27 @@ The plan's phases 4-7 are only partly built. Not found in the code:
 - No global locks, no turns, no scolding: plan section 3's hard requirements.
 - Every finger owns what it holds; a feed must commit exactly once, even if two fingers drop at once.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ● · Reading ○ · Talking ○ · Maths ◐ · Creative ● · Critical ◐
+**Aims at ages:** 3-6 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 3
+
+What it teaches now:
+- Shared play with no turns: feeding, mixing two ingredients into recipes, planting; recipe discoveries kept between visits.
+- Many fingers at once (each finger owns its food).
+
+Upgrades, most learning first:
+1. **Count the snack** (`math.count`, rule 6): Munch counts what he eats out loud and shows the total as a set ("four strawberries!"), favouring 4-10.
+2. **Munch's wishes** (`think.cause`, research #15): Munch asks for something ("something red and round"); the children decide what fits, and Munch learns favourites (teach-a-character).
+3. **Food words and feelings** (`talk.vocab`): crunchy, sour, sweet; Munch's face shows a feeling and says the word.
+4. **Recipe cards as print** (`reading.words`): discovered recipes get a card with the words and pictures.
+5. **Weather and garden from the plan** (`think.predict`): the unbuilt parts of `docs/HUNGRY_MONSTER_2_PLAN.md` (weather, surprise events, discovery book) as predict-then-see moments.
+
+"Talk about it" questions (`learn.talk`):
+- What should we cook for Munch next? Why?
+- Which snack do you think Munch likes best?
+- How many things did Munch eat? Let's count.
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

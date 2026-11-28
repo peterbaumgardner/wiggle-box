@@ -38,5 +38,26 @@ Each finger keeps its own beam-in-progress (a set of drags), so two children can
 - Keep all physics in grid units (the screen-size test checks it).
 - The "bare road fails, truss holds" test is the core lesson; never tune materials so a bare road passes.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ◐ · Creative ◐ · Critical ●
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Real truss physics: triangles hold, bare roads sag; materials and budgets; stress colours show which beams work hardest.
+
+Upgrades, most learning first:
+1. **Predict then test** (`think.predict`): before Go, children tap the beam they think will break first.
+2. **Budget maths made visible** (`math.add`): costs add up on a bar as beams are placed.
+3. **Shape detective** (`math.shapes`): triangles in the bridge light up and are counted.
+4. **Generated levels** (`learn.level`): gaps and trucks grow with success.
+5. **Real bridges** (`talk.explain`): after a win, a picture of a real bridge with the same idea.
+
+"Talk about it" questions (`learn.talk`):
+- Why are triangles so strong?
+- Where have you seen a bridge like yours?
+- Which beam do you think works hardest? Why?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

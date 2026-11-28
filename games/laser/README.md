@@ -36,5 +36,26 @@ second player.
 - Optics are tested against independent Snell/critical-angle maths: keep refractive indices and dispersion as they are
   unless you update the tests with sourced values.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ◐ · Creative ◐ · Critical ●
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Reflection (angle in = angle out), refraction (Snell), prisms and the colours of white light; six puzzles and free play.
+
+Upgrades, most learning first:
+1. **Predict the beam** (`think.predict`): before turning a mirror, a ghost line shows where the child thinks the beam will go; then the real beam.
+2. **Generated puzzles** (`think.plan`, `learn.level`): more than six, growing with success.
+3. **Angle words and numbers** (`math.geometry`): the angle in and out shown on the mirror.
+4. **Rainbow order** (`talk.vocab`, `think.sort`): the prism's colours named in order (red to violet).
+5. **Younger layer**: one mirror, one target, a big "turn" button.
+
+"Talk about it" questions (`learn.talk`):
+- Where else have you seen a rainbow?
+- Why does the mirror send the light that way?
+- How could you get the light around a corner?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

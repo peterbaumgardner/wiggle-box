@@ -12,6 +12,8 @@ works offline (service worker). Read README.md, games/README.md and js/README.md
   needs it. A platform change needs the full desktop suite.
 - Every game must handle many simultaneous touches (track by pointerId; per-finger state), big touch targets, phone and
   tablet in both orientations, and clean up through `g` (g.later / g.loop / g.listen / g.onEnd).
+- Learning: follow `docs/LEARNING_FRAMEWORK.md` (rules in section 4, skill ids in section 3) and use `js/learn.js`;
+  the game README's Learning plan lists the next upgrades.
 - Game CSS classes use the game's prefix and live in the game's own CSS file.
 - All scripts share one global scope: keep a game's helpers inside `init`.
 - After any app change: `npm run check`, `npm run stamp`, then the relevant tests

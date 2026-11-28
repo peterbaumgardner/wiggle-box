@@ -58,6 +58,7 @@
   picture back out of the book and redo puts it back; pictures are kept oldest first; tapping one brings it back; an
   untouched reopened picture isn't kept twice, a changed one joins the timeline; picking a colouring page keeps the
   drawing too; the picture on the paper is still there after leaving and coming back.
+- `30-learning`: picking a colour records the colour word in the learning layer.
 
 ## Several children at once
 Yes, by design: every finger paints with its own brush for its whole stroke, and Party mode gives every new finger a
@@ -92,5 +93,29 @@ different colour.
   set the undo snapshot's `archived` id, or pictures get lost or duplicated.
 - Storage code stays in `paint-book.js`; `paint.js` only calls `PAINT_BOOK`.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ● · Reading ◐ · Talking ◐ · Maths ◐ · Creative ● · Critical ○
+**Aims at ages:** 2-8 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 2
+
+What it teaches now:
+- Colour names on every pick; mixing (red + yellow = orange; light and dark); art talk that describes each stroke (straight, wavy, zigzag, loop, spiral, corners).
+- Stamps that count themselves; shape stamps with their sides; ABC stamps with a word; 123 stamps with ten-frames; colouring pages built from named shapes; symmetry words.
+- Wired to the learning layer: colour words, mixing, stroke descriptions, stamps and finished pictures are recorded; a "Talk about it" question when a finished picture goes into the book.
+
+Upgrades, most learning first:
+1. **Story from the picture book** (`talk.narrate`, rule 8): flipping through the book, the game asks "what happened next?" between two pictures, for a grown-up to talk through.
+2. **Draw-to-a-prompt invitations** (`create.design`, rule 13): an optional card "draw a house for a fish" with no right answer; tapping it again gives another idea.
+3. **Symmetry challenges** (`math.spatial`): half a butterfly is drawn; the child completes the other side, then mirror magic shows the match.
+4. **Pattern borders** (`math.patterns`): stamps along a line repeat a pattern; the game continues it if the child stops.
+5. **Name the coloured parts** (`reading.words`): colouring pages label each part with its word as it's filled (incidental print, rule 2).
+6. **Off-screen follow-up** (rule 12): Save also suggests "draw it again on paper".
+
+"Talk about it" questions (`learn.talk`):
+- Tell someone about the picture you just made. What is happening in it?
+- What two colours could make brown?
+- What is the same on both sides of your mirror picture?
+
 ---
-_Checked against the code on 2026-11-27 (picture book added). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

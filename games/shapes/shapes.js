@@ -9,14 +9,15 @@ init(stage,g){
   stage.innerHTML=`<div class="shapes"><div class="holes" id="holes"></div><p class="hint">Drag each shape to its home.</p><div class="pile" id="pile"></div></div>`;
   const holesEl=stage.querySelector('#holes'),pile=stage.querySelector('#pile');let done=0,count=0,rid=0;
   function round(){
-    done=0;rid++;const my=rid;const names=shuffle(Object.keys(SH)).slice(0,4);count=names.length;
+    done=0;rid++;const my=rid;/* adaptive (js/learn.js): 4 shapes to start, up to all 6 as the child places them without mistakes */
+    const names=shuffle(Object.keys(SH)).slice(0,4+learn.level('math.shapes',2));count=names.length;
     holesEl.innerHTML=names.map(n=>`<div class="hole" data-s="${n}" tabindex="0" role="button" aria-label="${n} home"><svg viewBox="0 0 100 100">${SH[n]}</svg></div>`).join('');
     pile.innerHTML='';const cols=shuffle(COL);
     shuffle(names).forEach((n,i)=>{const c=cols[i];const p=document.createElement('div');p.className='piece';p.dataset.s=n;p.tabIndex=0;p.setAttribute('role','button');p.setAttribute('aria-label',c[0]+' '+n);
       p.innerHTML=`<div class="rot" style="transform:rotate(${rint(-25,25)}deg)"><svg viewBox="0 0 100 100" style="fill:${c[1]}">${SH[n]}</svg></div>`;pile.appendChild(p);
-      p._place=h=>{if(h.dataset.s!==n||h.dataset.f){buzz();shakeEl(h);return false}h.dataset.f=1;p.style.transform='';p.tabIndex=-1;h.appendChild(p);const cc=center(h);burst(cc.x,cc.y,30,[c[1],'#fff','#FFC83D'],6);
+      p._place=h=>{if(h.dataset.s!==n||h.dataset.f){if(!h.dataset.f)learn.tried('shapes','math.shapes',false,n);buzz();shakeEl(h);return false}learn.tried('shapes','math.shapes',true,n);learn.saw('shapes','talk.vocab',c[0]+' '+n);h.dataset.f=1;p.style.transform='';p.tabIndex=-1;h.appendChild(p);const cc=center(h);burst(cc.x,cc.y,30,[c[1],'#fff','#FFC83D'],6);
           tone(523,.15,'triangle',.18);tone(784,.2,'triangle',.18,.1);floaty(stage,cc.x,cc.y-40,`${c[0]} ${n}`);
-          if(++done===count){g.later(()=>{cheer();party();addStar()},900);g.later(()=>{if(my===rid)round()},3300)}return true};
+          if(++done===count){g.later(()=>{cheer();party();addStar()},900);g.later(()=>{if(my===rid)learn.talk('shapes',`Can you find something shaped like a <b>${pick(names)}</b> in the room?`)},1600);g.later(()=>{if(my===rid)round()},3300)}return true};
       draggable(p,{onTap:()=>{tone(600,.12,'triangle');p.classList.remove('wig');void p.offsetWidth;p.classList.add('wig');const cc=center(p);floaty(stage,cc.x,cc.y-50,`${c[0]} ${n}`)},
         onDrop:(x,y)=>{const h=[...holesEl.children].find(h=>inRect(x,y,h,24));if(!h)return false;return p._place(h);
 }})});

@@ -31,5 +31,25 @@ Any finger drops balls or tilts the board; all share one machine.
 ## Keep it this way
 - Statistical tests use chi-square; seeded randomness comes from the test helper, not from the game.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ● · Creative ○ · Critical ◐
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 2 · Engaged 2 · Meaningful 2 · Social 2
+
+What it teaches now:
+- Bell curves from a bean machine (tiltable), dice sum distributions, coin flips and streaks.
+
+Upgrades, most learning first:
+1. **Bet first** (`think.predict`): before dropping 100 balls, place three counters where most will land.
+2. **Fair or not?** (`think.evidence`): a secret weighted coin; how many flips until you can tell?
+3. **Younger layer** (ages 5-6): one die, "which number comes up most?" with tally marks.
+4. **Bar charts as graphs** (`math.graphs`): name the tallest bar and compare two bars.
+
+"Talk about it" questions (`learn.talk`):
+- Why does 7 come up most with two dice?
+- Is it fair to choose who goes first with a coin?
+- What games use chance?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

@@ -78,7 +78,7 @@ init(stage,g){
   function tell(html,spoken,col){
     if(words){sayEl.innerHTML=html;sayEl.style.setProperty('--sc',col&&col!=='#FFFFFF'?col:INK);sayEl.classList.remove('show');void sayEl.offsetWidth;sayEl.classList.add('show');
       clearTimeout(sayT);sayT=g.later(()=>sayEl.classList.remove('show'),2600)}
-    if(talk&&soundOn&&spoken){const now=performance.now();if(now-lastSpoke<1200)return;lastSpoke=now;
+    if((talk||learn.settings.voice)&&soundOn&&spoken){const now=performance.now();if(now-lastSpoke<1200)return;lastSpoke=now;
       try{const s=window.speechSynthesis;if(!s)return;s.cancel();const u=new SpeechSynthesisUtterance(spoken);u.rate=.9;u.pitch=1.2;s.speak(u)}catch(e){}}
   }
   const cw=(name,col)=>`<b class="pp-cw" style="--c:${col==='rainbow'?INK:col}">${name}</b>`;
@@ -196,7 +196,7 @@ init(stage,g){
         if(kind==='num'){const n=+v,r=Math.max(3,s*.06),gap=r*2.7;for(let i=0;i<n;i++){const col=i%5,row=Math.floor(i/5);cx.beginPath();cx.arc((col-2)*gap,s*.42+row*gap,r,0,Math.PI*2);cx.fill()}}}
       else{cx.rotate((Math.random()-.5)*.4);cx.font=`${s}px ${EMOJI}`;cx.textAlign='center';cx.textBaseline='middle';cx.fillText(v,0,0)}
       cx.restore()}
-    hue=(hue+25)%360;tone(500+Math.random()*500,.08,'triangle',.12);
+    hue=(hue+25)%360;tone(500+Math.random()*500,.08,'triangle',.12);learn.saw('paint',kind==='abc'?'reading.letters':kind==='num'||kind==='shape'?'math.count':'talk.vocab',v);
     const inf=stampInfo(),now=performance.now();
     if(streak.key===inf.key&&now-streak.t<15000)streak.n++;else streak={key:inf.key,n:1,t:now};streak.t=now;
     const n=streak.n;
@@ -268,7 +268,7 @@ init(stage,g){
     else if(flips>=2){html=`${sz}wavy ${col} line, like the sea!`;spk=`${sz}wavy line, like the sea`}
     else if(corners>=1){html=`${col} line with ${word(corners)} ${corners===1?'corner':'corners'}!`;spk=`a line with ${word(corners)} ${corners===1?'corner':'corners'}`}
     else{html=`${sz}curvy ${col} line!`;spk=`${sz}curvy ${name} line`}
-    tell(sym(html.replace(/^(\w)/,m=>m.toUpperCase())),spk,C)}
+    tell(sym(html.replace(/^(\w)/,m=>m.toUpperCase())),spk,C);learn.saw('paint','talk.describe',spk)}
   function sym(html){if(mirror==='off'||mirrorTold)return html;mirrorTold=true;return html+(mirror==='snow'?' <small>Six parts match — like a snowflake!</small>':' <small>Both sides match — that\'s symmetry!</small>')}
 
   /* ---------- undo / redo (ink, paper and picture together) ---------- */
@@ -341,7 +341,7 @@ init(stage,g){
   g.onEnd(()=>bookURLs.forEach(u=>URL.revokeObjectURL(u)));
 
   /* ---------- choosing things ---------- */
-  function setColor(c,n,quiet){color=c;colorName=n;if(tool==='eraser')setTool(prevTool,true);syncBar();
+  function setColor(c,n,quiet){color=c;colorName=n;learn.saw('paint','talk.vocab',n);if(tool==='eraser')setTool(prevTool,true);syncBar();
     if(!quiet){if(c==='rainbow')tell('<b class="pp-rb">Rainbow!</b> <small>red, orange, yellow, green, blue, purple</small>','Rainbow! Red, orange, yellow, green, blue, purple');
       else tell(`<span class="pp-chip" style="--c:${c}"></span>${cw(n,c)}`,n,c)}}
   function setTool(t,quiet){if(t==='eraser'&&tool!=='eraser')prevTool=tool;tool=t;if(t!=='eraser'&&t!=='stamp'){lastBrush=t;stamp=null}if(t==='stamp'&&!stamp)tool=lastBrush;syncBar();
@@ -373,13 +373,15 @@ init(stage,g){
     else tell(...intro[id])}
   function clearPaper(){if(pts.size)return;const dirty=changed;remember();const old=archive(dirty);if(old){hist[hist.length-1].archived=old;zoomAway()}openedFrom=null;
     cx.save();cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);cx.restore();filled=new Set();doneTold=false;tone(1200,.3,'sine',.12,0,200);
-    tell(old?'✨ Fresh paper! <small>Your picture is in the 📖 book</small>':'✨ Fresh paper!',old?'Fresh paper! Your picture is in the book':'Fresh paper!')}
+    tell(old?'✨ Fresh paper! <small>Your picture is in the 📖 book</small>':'✨ Fresh paper!',old?'Fresh paper! Your picture is in the book':'Fresh paper!');
+    if(old){learn.saw('paint','create.make');g.later(()=>learn.talk('paint','Tell someone about the picture you just made. What is happening in it?',{at:'top'}),2500)}}
   function save(){const c=document.createElement('canvas');c.width=cv.width;c.height=cv.height;const k=c.getContext('2d');k.fillStyle=paper;k.fillRect(0,0,c.width,c.height);k.drawImage(cv,0,0);k.drawImage(lv,0,0);
     const a=document.createElement('a');a.download='wiggle-box-art-'+Date.now()+'.png';a.href=c.toDataURL('image/png');a.click();tone(920,.15,'triangle');tell('💾 Saved your picture!','Saved!')}
   function mixPick(c,n){if(!mixA||mixB){mixA=[c,n];mixB=null}else mixB=[c,n];tone(440+MIXIN.findIndex(x=>x[1]===n)*80,.12,'triangle');
     if(mixB){const key=[mixA[1],mixB[1]].sort().join('+'),res=mixA[1]===mixB[1]?[mixA[0],mixA[1]]:MIX[key];
       setColor(res[0],res[1],true);
       tell(`${cw(mixA[1],mixA[0])} + ${cw(mixB[1],mixB[0])} = ${cw(res[1],res[0])}`,mixA[1]===mixB[1]?`Still ${lc(res[1])}`:`${mixA[1]} and ${lc(mixB[1])} make ${lc(res[1])}`,res[0]);
+      learn.saw('paint','create.remix',key+'='+res[1]);
       if(mixA[1]!==mixB[1]&&!mixFound.has(res[1])){mixFound.add(res[1]);addStar();cheer();const r=menu.getBoundingClientRect();burst(r.left+r.width/2,r.top+40,30,[res[0]])}
       renderMenu();g.later(()=>{if(openCat==='color'&&mixB)closeMenu()},1500)}
     else renderMenu()}

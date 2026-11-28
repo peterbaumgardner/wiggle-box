@@ -34,5 +34,25 @@ Fingers are tracked (two-finger pinch/twist), but each mode has one picture: fin
 ## Keep it this way
 - "No sliders" is a design decision: change values by dragging on the art.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ● · Creative ● · Critical ◐
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Formulas as art: sunflower golden angle, spirograph points (R / gcd), fractal tree counts, the Mandelbrot set; changed by dragging on the art.
+
+Upgrades, most learning first:
+1. **Save to a gallery** (`create.make`): reuse Paint's picture book so math art is kept.
+2. **Predict the points** (`think.predict`): before drawing a spirograph, guess how many points it will have.
+3. **Patterns in nature** (`talk.explain`): a photo of a real sunflower or fern next to the art.
+4. **Younger layer** (ages 4-6): just turn and watch, colour by number of petals (counting).
+
+"Talk about it" questions (`learn.talk`):
+- Where do you see spirals in nature?
+- Why does the tree have more and more branches at each level?
+- What would you change to make your own pattern?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

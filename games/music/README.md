@@ -28,10 +28,33 @@ Yes: every finger plays and slides independently. In Copy me, input is locked wh
 
 ## Not done / known gaps
 - One song only; no recording or playback of what a child played.
-- Encouragement lines use `say()`, silent while voice is off app-wide.
+- Encouragement lines use `say()`: silent unless a grown-up turns Spoken words on.
 
 ## Keep it this way
 - Notes must stay in tune: the test checks every frequency.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ● · Reading ○ · Talking ○ · Maths ◐ · Creative ◐ · Critical ◐
+**Aims at ages:** 2-7 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 1
+
+What it teaches now:
+- Eight in-tune C-major notes; following a glowing melody (Twinkle Twinkle); Copy me memory sequences that grow (`think.memory`).
+- Glissando with any number of fingers.
+
+Upgrades, most learning first:
+1. **Make your own song** (`create.music`): record what the child plays, play it back, keep it in a song book like Paint's picture book.
+2. **High and low, fast and slow words** (`talk.vocab`): the game names pitch and tempo as the child plays.
+3. **Rhythm echo** (`motor.timing`): clap-back rhythms on one key, adaptive with `learn.level`.
+4. **Number songs** (`math.count`, `math.patterns`): songs that count up the scale and patterns (do-mi-do-mi).
+5. **Copy me adaptive start** (`think.memory`): start length from `learn.level` so older children begin at 4 notes.
+6. **Duet zones** (rule 9): two half-keyboards in different colours for two children.
+
+"Talk about it" questions (`learn.talk`):
+- Which notes sound happy? Which sound sleepy?
+- Can you hum the song back without the piano?
+- What song should we learn next?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

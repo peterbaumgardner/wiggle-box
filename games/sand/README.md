@@ -39,7 +39,7 @@ undoes the last change by anyone.
 
 ## Not done / known gaps
 - One of the two heaviest games (with Splash Lab); frame rate never measured on a real tablet.
-- Narration (`say()`, 12 calls) is silent because voice is off app-wide.
+- Narration (`say()`, 12 calls) is silent unless a grown-up turns Spoken words on.
 - The registry blurb says 50 elements; if you add or remove elements, update the blurb in `games/registry.js`.
 
 ## Keep it this way
@@ -48,5 +48,27 @@ undoes the last change by anyone.
 - Saves are versionless run-length codes: changing element numbers breaks old saves on children's devices. Add new
   elements at the end of the numbering.
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ◐ · Reading ○ · Talking ○ · Maths ○ · Creative ● · Critical ◐
+**Aims at ages:** 3-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 3 · Meaningful 2 · Social 1
+
+What it teaches now:
+- 50 elements that react (fire, water, plants, electricity, explosives), with discoveries that each earn a star; density layering.
+- Freeze, single step and undo for watching causes.
+
+Upgrades, most learning first:
+1. **Element names as print** (`reading.words`): the element's name appears under the finger while painting.
+2. **Discovery cards** (`think.cause`): each discovery shows "A + B = C" with pictures and a sentence, kept in a book.
+3. **Predict mode** (`think.predict`): "what happens if lava touches water?" with three picture choices before trying.
+4. **Challenges** (`think.plan`, `create.design`): "put out the fire", "grow a garden", "make a circuit light up".
+5. **First layer for 3-5s**: a simple menu of 8 elements before the full 50.
+
+"Talk about it" questions (`learn.talk`):
+- What happened when the water touched the lava?
+- Can you make something that has never been made before?
+- How could we stop the fire spreading?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._

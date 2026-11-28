@@ -20,6 +20,8 @@ init(stage,g){
   function popB(b,x,y){
     const i=bubs.indexOf(b);if(i<0)return;bubs.splice(i,1);b.el.remove();
     pop(.8+Math.random()*.6);burst(x,y,26,[`hsl(${b.hue},90%,60%)`,'#fff','#FFC83D'],7);say(b.speak);floaty(stage,x,y,b.show);
+    learn.saw('bubbles',mode==='abc'?'reading.letters':mode==='num'?'math.count':'talk.vocab',b.speak);
+    if(pops+1===10)g.later(()=>learn.talk('bubbles',mode==='abc'?'Which letter does your name start with?':mode==='num'?'Can you count five things you can see right now?':'Which animal would you like to be? Why?'),1500);
     if(++pops%10===0){g.later(()=>{cheer();addStar();party();say('Ten pops! You got a star!')},700)}
   }
   /* a bubble is placed the moment it exists, not one frame later (it used to flash in the top-left corner) */

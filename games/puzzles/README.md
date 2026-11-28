@@ -31,5 +31,25 @@ Tap-based on one shared board.
 ## Keep it this way
 - New Sudoku boards must keep exactly one solution (`countSol`).
 
+## Learning plan
+See `docs/LEARNING_FRAMEWORK.md` for the research, the skill ids and the rules every game follows.
+
+**Learning areas today:** Motor ○ · Reading ○ · Talking ○ · Maths ◐ · Creative ○ · Critical ●
+**Aims at ages:** 6-10 · **Four pillars (estimate, 0-3):** Active 3 · Engaged 2 · Meaningful 1 · Social 1
+
+What it teaches now:
+- Tower of Hanoi (fewest moves), Lights Out, binary place value, 4×4 and 6×6 Sudoku with one solution.
+
+Upgrades, most learning first:
+1. **Younger layer** (ages 4-6): picture Sudoku (animals instead of numbers), 2-disk towers.
+2. **Plan aloud** (`think.plan`, `talk.explain`): before the tower, the game asks "which disk moves first?".
+3. **Adaptive** (`learn.level`): disks, board sizes and grids follow the child.
+4. **Binary to the real world** (`math.place`): show binary next to fingers counting (5 = 101).
+
+"Talk about it" questions (`learn.talk`):
+- What was your plan for the tower?
+- Why does the smallest disk move so often?
+- How would you explain Sudoku to a friend?
+
 ---
-_Checked against the code on 2026-11-27 (main at 90ca8e4). Update this file in the same commit as any change to the game._
+_Checked against the code on 2026-11-28 (learning plan added). Update this file in the same commit as any change to the game._
